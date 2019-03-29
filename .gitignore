@@ -5,3 +5,4 @@
 
 *.pyproj
 *.user
+/pyioflash/__pycache__
