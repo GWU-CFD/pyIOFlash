@@ -5,7 +5,7 @@ from typing import Any, Tuple, List, Set, Dict, Iterable, Callable, Union
 import numpy
 import h5py
 
-from pyio_utility import _filter_transpose, _first_true, _set_is_unique, _reduce_str
+from .pyio_utility import _filter_transpose, _first_true, _set_is_unique, _reduce_str
 
 @dataclass(order=True)
 class _BaseData(AbstractBase):
