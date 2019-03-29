@@ -1,7 +1,7 @@
 import numpy
 from matplotlib import pyplot
 
-from pyio import SimulationData
+from pyioflash import SimulationData
 
 data = SimulationData.from_list(range(20), path='../../../qual2/', header='INS_Rayleigh_Benard_hdf5_plt_cnt_')
 
