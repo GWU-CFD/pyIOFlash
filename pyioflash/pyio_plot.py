@@ -46,11 +46,15 @@ def simple_contour(data: SimulationData, plane: Plane, field: str) -> None:
     index, point = _cut_from_plane(data, plane, blocks)
 
     for block in blocks:
-        pyplot.contourf(
-            *tuple(data.geometry[plane.time: plane.time + 1][_map_mesh[plane.axis]][_map_plane[plane.axis](block, index)]),
-            data.fields[plane.time: plane.time + 1][field][_map_plane[plane.axis](block, index)][0],
-            levels=numpy.linspace(0, 1, 15))
+        _plot_from_block(data, plane, field, block, index)
 
     pyplot.xlim(0, 1.0)
     pyplot.ylim(0, 1.0)
     pyplot.show()
+
+def _plot_from_block(data: SimulationData, plane: Plane, field: str, block: int, index: int) -> None:
+    pyplot.contourf(
+        *tuple(data.geometry[plane.time: plane.time + 1][_map_mesh[plane.axis]][_map_plane[plane.axis](block, index)]),
+        data.fields[plane.time: plane.time + 1][field][_map_plane[plane.axis](block, index)][0],
+        levels=numpy.linspace(0, 1, 15)
+        )
