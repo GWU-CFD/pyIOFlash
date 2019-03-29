@@ -42,14 +42,14 @@ def _cut_from_plane(data: SimulationData, plane: Plane, blocks: List[int]) -> Tu
 
     return index, points[index]
 
-def simple_plot(data: SimulationData, plane: Plane, field: str) -> None:
+def simple_plot(data: SimulationData, *, plane: Plane, field: str) -> None:
     fig, ax = _make_figure()
 
     blocks = _blocks_from_plane(data, plane)
     index, point = _cut_from_plane(data, plane, blocks)
 
     for block in blocks:
-        _plot_from_block(data, plane, field, block, index, ax)
+        _plot_from_block(data, plane=plane, field=field, block=block, index=index, axes=ax)
 
     ax.set_xlim([0, 1.0])
     ax.set_ylim([0, 1.0])
@@ -66,9 +66,9 @@ def _make_figure() -> Tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
 
     return fig, ax
 
-def _plot_from_block(data: SimulationData, plane: Plane, field: str, block: int, index: int, 
-                     ax: matplotlib.axes.Axes, type: str = 'contour') -> None:
-    _map_plot_type[type](ax)(
+def _plot_from_block(data: SimulationData, *, plane: Plane, field: str, block: int, index: int, 
+                     axes: matplotlib.axes.Axes, type: str = 'contour') -> None:
+    _map_plot_type[type](axes)(
         *tuple(data.geometry[plane.time: plane.time + 1][_map_mesh[plane.axis]][_map_plane[plane.axis](block, index)]),
         data.fields[plane.time: plane.time + 1][field][_map_plane[plane.axis](block, index)][0],
         levels=numpy.linspace(0, 1, 15))
