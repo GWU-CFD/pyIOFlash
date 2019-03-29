@@ -7,26 +7,26 @@ A simple python Module for providing methods to import, process, and plot FLASH4
 
    -- Revision 0.16 (alpha)
 
-   -- needed feature list --
-       [-] add block dimensions to GeometryData
-       [-] add refine level to GeometryData
-       [ ] others ???
+   -- needed feature list
+       -- add block neighbors to GeometryData
+       -- add refine level to GeometryData
+       -- add ability to fill in 'guard' data for blocks
+       -- others ???
 
    -- major revision roadmap --
-       [-] initial functioning FLASH4 parser
-       [ ] initial functioning Plot Utility
-       [ ] initial multiprocessing functionality
-       [ ] add parser for EDDY6 code
-       [ ] others ???
+       -- initial functioning Plot Utility
+       -- initial multiprocessing functionality
+       -- add parser for EDDY6 code
+       -- others ???
 
- 
-    -- USAGE --
+### Usage
+==================================
 
-  |  from pyio import SimulationData
-  |
-  |  data = SimulationData.from_list(range(20), path='test/', header='INS_Rayleigh_Benard_hdf5_plt_cnt_')
-  |
-  |  data.fields[20.0 : 60.0 : 2]['temp', 'pres'][:, :, :, :, :]
+    from pyio import SimulationData
+  
+    data = SimulationData.from_list(range(20), path='test/', header='INS_Rayleigh_Benard_hdf5_plt_cnt_')
+  
+    data.fields[20.0 : 60.0 : 2]['temp', 'pres'][:, :, :, :, :]
                  -- [slicing based     ||                    ||
                  --  on time or        ||                    ||
                  --  file numbers]     ||                    ||
