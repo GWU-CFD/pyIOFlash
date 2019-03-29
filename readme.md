@@ -1,23 +1,26 @@
-"""
 # pyIO
 ### A Simple FLASH4 HDF5 Input / Output Tool 
 ==================================
 
 A simple python Module for providing methods to import, process, and plot FLASH4 HDF5 plot and chk files
 
+
    -- Revision 0.16 (alpha)
 
-   -- needed feature list
-       -- add block neighbors to GeometryData
-       -- add refine level to GeometryData
-       -- add ability to fill in 'guard' data for blocks
-       -- others ???
+
+   -- needed feature list --
+   
+       add block neighbors to GeometryData
+       add refine level to GeometryData
+       add ability to fill in 'guard' data for blocks
+       others ???
 
    -- major revision roadmap --
-       -- initial functioning Plot Utility
-       -- initial multiprocessing functionality
-       -- add parser for EDDY6 code
-       -- others ???
+   
+       initial functioning Plot Utility
+       initial multiprocessing functionality
+       add parser for EDDY6 code
+       others ???
 
 ### Usage
 ==================================
@@ -40,5 +43,3 @@ A simple python Module for providing methods to import, process, and plot FLASH4
             scalars     -- (time, dt, nstep, nbegin)
             dynamics    -- remaining hdf5 plt file (time varying)
             statics     -- remaining hdf5 plt file (steady w/ time)
-
-"""
