@@ -1,7 +1,8 @@
-from pyioflash import SimulationData, simple_contour
+from pyioflash import SimulationData, SimulationPlot
 
-data = SimulationData.from_list(range(20), path='../../../qual2/', header='INS_Rayleigh_Benard_hdf5_plt_cnt_')
+data = SimulationData.from_list(range(5), path='../../../qual2/', header='INS_Rayleigh_Benard_hdf5_plt_cnt_')
+visual = SimulationPlot(data, fig_options={'title': f'Rayleigh Benard Convection'})
 
-simple_contour(data, 60.7, ('z', 0.5), 'temp')
-
+visual.plot(axis='y', cut=0.5, time=60.0, field='temp', options={'title': f'Temperature @ y=0.5 and t=60.0'})
+visual.show()
 
