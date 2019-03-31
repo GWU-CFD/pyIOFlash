@@ -6,3 +6,4 @@
 *.pyproj
 *.user
 /pyioflash/__pycache__
+/.vs

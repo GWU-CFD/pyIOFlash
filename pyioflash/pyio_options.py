@@ -12,12 +12,13 @@ class FigureOptions:
     font_face: str = 'Helvetica'
     save: bool = False
     show: bool = True
+    show_differed: bool = True
 
 @dataclass
 class PlotOptions:
     title: str = ''
     axis_titles: Tuple[str, str, str] = ('x [-]', 'y [-]', 'z [-]')
-    type: str = 'density'
+    type: str = 'contourf'
     colorbar: bool = True
     colorbar_lvls: int = 10
     colormap: str = 'viridis'

@@ -1,10 +1,8 @@
-from pyioflash import SimulationData, simple_plot, simple_show, Plane
+from pyioflash import SimulationData, SimulationPlot
 
 data = SimulationData.from_list(range(20), path='../../../qual2/', header='INS_Rayleigh_Benard_hdf5_plt_cnt_')
+visual = SimulationPlot(data)
 
-simple_plot(data, plane=Plane(60.7, 'z', 0.5), field='temp')
-
-simple_plot(data, plane=Plane(60.7, 'y', 0.5), field='temp')
-
-simple_show()
+visual.plot(axis='y', cut=0.5, time=60.7, field='temp')
+visual.show()
 
