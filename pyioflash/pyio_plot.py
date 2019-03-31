@@ -3,7 +3,9 @@ from typing import Tuple, List, Dict, Union, Any
 
 import numpy
 import matplotlib
+import matplotlib
 from matplotlib import pyplot
+from matplotlib.font_manager import FontProperties
 
 from .pyio import SimulationData
 from .pyio_utility import _first_true
@@ -19,11 +21,13 @@ _map_mesh = {'x': ('grd_mesh_y', 'grd_mesh_z'),
              'y': ('grd_mesh_x', 'grd_mesh_z'),
              'z': ('grd_mesh_x', 'grd_mesh_y')}
 _map_plane = {'x': lambda block, index : numpy.index_exp[0, block, :, :, index], 
-             'y': lambda block, index : numpy.index_exp[0, block, :, index, :], 
-             'z': lambda block, index : numpy.index_exp[0, block, index, :, :]}
-
-_map_plot_type = {'contour' : lambda ax: ax.contour,
-                  'contourf' : lambda ax: ax.contourf}
+              'y': lambda block, index : numpy.index_exp[0, block, :, index, :], 
+              'z': lambda block, index : numpy.index_exp[0, block, index, :, :]}
+_map_plot = {'contour' : lambda ax: ax.contour,
+             'contourf' : lambda ax: ax.contourf}
+_map_label = {'x': lambda options, ax: (options.labels[1], options.labels[2])[_map_axes[ax]],
+              'y': lambda options, ax: (options.labels[0], options.labels[2])[_map_axes[ax]],
+              'z': lambda options, ax: (options.labels[0], options.labels[1])[_map_axes[ax]],}
 
 
 class SimulationPlot:
@@ -78,17 +82,31 @@ class SimulationPlot:
         for block in blocks:
             self._plot_from_block(plane=plane, field=field, block=block, index=index, axes=ax)
 
+        matplotlib.rcParams.update({'font.size': self.plot_options.font_size,
+                                    'font.family': self.plot_options.font_face})
+        font = FontProperties()
+        font.set_size(self.plot_options.font_size)
+        font.set_name(self.plot_options.font_face)
+
+        font_fig = FontProperties()
+        font_fig.set_size(self.fig_options.font_size)
+        font_fig.set_name(self.fig_options.font_face)
+
+        fig.suptitle(self.fig_options.title, ha='center', fontproperties=font_fig)
     
+        ax.set_title(self.plot_options.title, loc='left', fontproperties=font)
         ax.set_xlim([0, 1.0])
         ax.set_ylim([0, 1.0])
+        ax.set_xlabel(_map_label[plane.axis](self.plot_options, 'x'), fontproperties=font)
+        ax.set_ylabel(_map_label[plane.axis](self.plot_options, 'y'), fontproperties=font)
+        ax.tick_params(axis='both', which='major', labelsize=self.plot_options.font_size)
+        ax.tick_params(axis='both', which='minor', labelsize=self.plot_options.font_size - 2)
+
+        fig.tight_layout(pad=1.10, rect=(0, 0, 1, 0.95))
 
     def _make_figure(self) -> Tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
         fig = pyplot.figure(figsize=self.fig_options.size_single)
-        ax = fig.add_subplot(1, 1, 1)
-
-        fig.suptitle(self.fig_options.title, ha='center')
-        fig.tight_layout()
-
+        ax = fig.add_subplot(1, 1, 1)     
         return fig, ax
  
     def _blocks_from_plane(self, plane: Plane) -> List[int]:
@@ -108,7 +126,7 @@ class SimulationPlot:
 
     def _plot_from_block(self, *, plane: Plane, field: str, block: int, index: int, 
                          axes: matplotlib.axes.Axes) -> None:
-        _map_plot_type[self.plot_options.type](axes)(
+        _map_plot[self.plot_options.type](axes)(
             *tuple(self.data.geometry[plane.time: plane.time + 1][_map_mesh[plane.axis]][_map_plane[plane.axis](block, index)]),
             self.data.fields[plane.time: plane.time + 1][field][_map_plane[plane.axis](block, index)][0],
             levels=numpy.linspace(0, 1, 15))

@@ -5,19 +5,21 @@ from typing import Tuple, List
 @dataclass
 class FigureOptions:
     """ -- """
-    title: str = ''
+    title: str = 'figure title'
     size: Tuple[int, int] = (15, 11)
-    size_single: Tuple[int, int] = (7, 5)
-    font: int = 8
-    font_face: str = 'Helvetica'
+    size_single: Tuple[int, int] = (11, 7)
+    font_size: int = 14
+    font_face: str = 'Cambria'
     save: bool = False
     show: bool = True
     show_differed: bool = True
 
 @dataclass
 class PlotOptions:
-    title: str = ''
-    axis_titles: Tuple[str, str, str] = ('x [-]', 'y [-]', 'z [-]')
+    title: str = 'plot title'
+    labels: Tuple[str, str, str] = ('x [-]', 'y [-]', 'z [-]')
+    font_size: int = 10
+    font_face: str = 'Calibri'
     type: str = 'contourf'
     colorbar: bool = True
     colorbar_lvls: int = 10
