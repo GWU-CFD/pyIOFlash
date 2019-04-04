@@ -17,9 +17,9 @@ _map_grid = {'x': 'grd_mesh_x', 'y': 'grd_mesh_y', 'z': 'grd_mesh_z'}
 _map_points = {'x': lambda block : numpy.index_exp[0, block, 0, 0, :], 
              'y': lambda block : numpy.index_exp[0, block, 0, :, 0], 
              'z': lambda block : numpy.index_exp[0, block, :, 0, 0]}
-_map_mesh = {'x': ('grd_mesh_y', 'grd_mesh_z'),
-             'y': ('grd_mesh_x', 'grd_mesh_z'),
-             'z': ('grd_mesh_x', 'grd_mesh_y')}
+_map_mesh = {'x': ('_grd_mesh_y', '_grd_mesh_z'),
+             'y': ('_grd_mesh_x', '_grd_mesh_z'),
+             'z': ('_grd_mesh_x', '_grd_mesh_y')}
 _map_plane = {'x': lambda block, index : numpy.index_exp[0, block, :, :, index], 
               'y': lambda block, index : numpy.index_exp[0, block, :, index, :], 
               'z': lambda block, index : numpy.index_exp[0, block, index, :, :]}
@@ -68,20 +68,22 @@ class SimulationPlot:
         if options is not None:
             self.plot_options = replace(self.plot_options, **options)
 
-        self._simple_plot(field=field, plane=Plane(time=time, axis=axis, cut=cut))
+        self._simple_plot2D(field=field, plane=Plane(time=time, axis=axis, cut=cut))
 
     def show(self) -> None:
         pyplot.show()
 
-    def _simple_plot(self, *, field: str, plane: Plane) -> None:
+    def _simple_plot2D(self, *, field: str, plane: Plane) -> None:
         fig, ax = self._make_figure()
 
         blocks = self._blocks_from_plane(plane)
         index, point = self._cut_from_plane(plane, blocks)
 
+        # plot field @ plane by blocks
         for block in blocks:
             self._plot_from_block(plane=plane, field=field, block=block, index=index, axes=ax)
 
+        # set figure and plot font settings
         matplotlib.rcParams.update({'font.size': self.plot_options.font_size,
                                     'font.family': self.plot_options.font_face})
         font = FontProperties()
@@ -92,8 +94,10 @@ class SimulationPlot:
         font_fig.set_size(self.fig_options.font_size)
         font_fig.set_name(self.fig_options.font_face)
 
+        # set figure options
         fig.suptitle(self.fig_options.title, ha='center', fontproperties=font_fig)
     
+        # set plot options
         ax.set_title(self.plot_options.title, loc='left', fontproperties=font)
         ax.set_xlim([0, 1.0])
         ax.set_ylim([0, 1.0])
@@ -102,6 +106,7 @@ class SimulationPlot:
         ax.tick_params(axis='both', which='major', labelsize=self.plot_options.font_size)
         ax.tick_params(axis='both', which='minor', labelsize=self.plot_options.font_size - 2)
 
+        # arange figure and margin
         fig.tight_layout(pad=1.10, rect=(0, 0, 1, 0.95))
 
     def _make_figure(self) -> Tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
@@ -124,9 +129,20 @@ class SimulationPlot:
 
         return index, points[index]
 
+    #def _get_plot_vrange(self, *, plane: Plane, field: str, blocks: List[int], index: int) -> Tuple[flfloat, float]:
+    #    min = 0
+    #    max = 0
+
+        #for block in blocks:
+        #    slice = self.data.fields[plane.time: plane.time + 1][field][_map_plane[plane.axis](block, index)][0]
+        #    min = min(min, slice.min())
+        #    max = max(max, slice.max())
+
+        #return min, max
+
     def _plot_from_block(self, *, plane: Plane, field: str, block: int, index: int, 
                          axes: matplotlib.axes.Axes) -> None:
         _map_plot[self.plot_options.type](axes)(
             *tuple(self.data.geometry[plane.time: plane.time + 1][_map_mesh[plane.axis]][_map_plane[plane.axis](block, index)]),
-            self.data.fields[plane.time: plane.time + 1][field][_map_plane[plane.axis](block, index)][0],
+            self.data.fields[plane.time: plane.time + 1]['_' + field][_map_plane[plane.axis](block, index)][0],
             levels=numpy.linspace(0, 1, 15))

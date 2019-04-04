@@ -1,6 +1,7 @@
 from abc import ABC as AbstractBase, abstractmethod
 from dataclasses import dataclass, field, InitVar
 from typing import Any, Tuple, List, Set, Dict, Iterable, Callable, Union
+from functools import partial
 
 import numpy
 import h5py
@@ -83,10 +84,10 @@ class GeometryData(_BaseData):
     grd_size_x: int = field(repr=False, init=False, compare=False)
     grd_size_y: int = field(repr=False, init=False, compare=False)
     grd_size_z: int = field(repr=False, init=False, compare=False)
-    grd_mesh_x: numpy.ndarray = field(repr=False, init=False, compare=False)
-    grd_mesh_y: numpy.ndarray = field(repr=False, init=False, compare=False)
-    grd_mesh_z: numpy.ndarray = field(repr=False, init=False, compare=False)            
-        
+    _grd_mesh_x: numpy.ndarray = field(repr=False, init=False, compare=False)
+    _grd_mesh_y: numpy.ndarray = field(repr=False, init=False, compare=False)
+    _grd_mesh_z: numpy.ndarray = field(repr=False, init=False, compare=False)    
+    
     def __str__(self) -> str:
         fields = ['grd_type', 'blk_num', 'blk_num_x', 'blk_num_y', 'blk_num_z', 
                   'blk_size_x', 'blk_size_y', 'blk_size_z']
@@ -166,24 +167,24 @@ class GeometryData(_BaseData):
         self.grd_size = self.grd_size_x * self.grd_size_y * self.grd_size_z
         
         # intialize mesh grids
-        self.grd_mesh_x = numpy.ndarray((self.blk_num, self.blk_size_z, 
-                                         self.blk_size_y, self.blk_size_x), dtype=numpy.dtype(float))
-        self.grd_mesh_y = numpy.ndarray((self.blk_num, self.blk_size_z, 
-                                         self.blk_size_y, self.blk_size_x), dtype=numpy.dtype(float))
-        self.grd_mesh_z = numpy.ndarray((self.blk_num, self.blk_size_z, 
-                                         self.blk_size_y, self.blk_size_x), dtype=numpy.dtype(float))
+        self._grd_mesh_x = numpy.ndarray((self.blk_num, self.blk_size_z + 1, 
+                                          self.blk_size_y + 1, self.blk_size_x + 1), dtype=numpy.dtype(float))
+        self._grd_mesh_y = numpy.ndarray((self.blk_num, self.blk_size_z + 1, 
+                                          self.blk_size_y + 1, self.blk_size_x + 1), dtype=numpy.dtype(float))
+        self._grd_mesh_z = numpy.ndarray((self.blk_num, self.blk_size_z + 1, 
+                                          self.blk_size_y + 1, self.blk_size_x + 1), dtype=numpy.dtype(float))
         
         for block in range(self.blk_num):
             bndbox = self.blk_bndbox[block]
             sz_box = (self.blk_size_x, self.blk_size_y, self.blk_size_z)
-            x = numpy.linspace(bndbox[0][0], bndbox[0][1], sz_box[0], False)
-            y = numpy.linspace(bndbox[1][0], bndbox[1][1], sz_box[1], False)
-            z = numpy.linspace(bndbox[2][0], bndbox[2][1], sz_box[2], False)
+            x = numpy.linspace(bndbox[0][0], bndbox[0][1], sz_box[0] + 1, True)
+            y = numpy.linspace(bndbox[1][0], bndbox[1][1], sz_box[1] + 1, True)
+            z = numpy.linspace(bndbox[2][0], bndbox[2][1], sz_box[2] + 1, True)
             
             Z, Y, X = numpy.meshgrid(z, y, x, indexing='ij')
-            self.grd_mesh_x[block, :, :, :] = X
-            self.grd_mesh_y[block, :, :, :] = Y
-            self.grd_mesh_z[block, :, :, :] = Z
+            self._grd_mesh_x[block, :, :, :] = X
+            self._grd_mesh_y[block, :, :, :] = Y
+            self._grd_mesh_z[block, :, :, :] = Z
             
         # initialize list of class member names holding the data 
         setattr(self, '_attributes', {
@@ -191,6 +192,30 @@ class GeometryData(_BaseData):
                 'blk_size_y', 'blk_size_z', 'blk_coords', 'blk_bndbox', 'blk_dict_x',
                 'blk_dict_y', 'blk_dict_z', 'grd_type', 'grd_dim', 'grd_size', 'grd_size_x', 
                 'grd_size_y', 'grd_size_z', 'grd_mesh_x', 'grd_mesh_y', 'grd_mesh_z'})
+
+    @property
+    def grd_mesh_x(self):
+        return self._grd_mesh_x[:, :-1, :-1, :-1]
+
+    @grd_mesh_x.setter
+    def grd_mesh_x(self, value):
+        self._grd_mesh_x[:, :-1, :-1, :-1] = value
+
+    @property
+    def grd_mesh_y(self):
+        return self._grd_mesh_y[:, :-1, :-1, :-1]
+
+    @grd_mesh_y.setter
+    def grd_mesh_y(self, value):
+        self._grd_mesh_y[:, :-1, :-1, :-1] = value
+
+    @property
+    def grd_mesh_z(self):
+        return self._grd_mesh_z[:, :-1, :-1, :-1]
+
+    @grd_mesh_z.setter
+    def grd_mesh_z(self, value):
+        self._grd_mesh_z[:, :-1, :-1, :-1] = value
     
 @dataclass
 class FieldData(_BaseData):
@@ -220,10 +245,22 @@ class FieldData(_BaseData):
             
         # initialize field data members
         for group in self._groups:
-            setattr(self, group, file[group][()])
+            shape = file[group].shape
+            shape = tuple([shape[0]]) + tuple([length + 1 for length in shape[1:]])
+            data = numpy.ndarray(shape, dtype=numpy.dtype(float))
+            data[:, :-1, :-1, :-1] = file[group][()]
+            setattr(self, '_' + group, data)
+            setattr(FieldData, group, property(partial(self._get_attr, attr='_' + group), 
+                                               partial(self._set_attr, attr='_' + group)))
             
         # initialize list of class member names holding the data 
         setattr(self, '_attributes', {group for group in self._groups}) 
+
+    def _set_attr(self, _, value, attr):
+        getattr(self, attr)[:, :-1, :-1, :-1] = value
+
+    def _get_attr(self, _, attr):
+        return getattr(self, attr)[:, :-1, :-1, :-1]
     
 @dataclass
 class ScalarData(_BaseData):
