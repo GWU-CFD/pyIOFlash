@@ -79,5 +79,5 @@ class Plane:
     Data object for defining a 2d cut-plane at a give time for use in plotting
     """
     time: Union[float, int]
-    axis: str
     cut: float
+    axis: str = 'z'

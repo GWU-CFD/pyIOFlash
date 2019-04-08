@@ -111,7 +111,8 @@ class SortedDict:
         
         # dictionary-like behavior
         if isinstance(key, float):
-            return self.__class__.from_sorted([self._data[self._keys[key]]])
+            start = _first_true(self._keys.items(), lambda x: key <= x[0])[1]
+            return self.__class__.from_sorted([self._data[start]])
         
         # list-like behavior
         elif isinstance(key, int):
@@ -342,7 +343,7 @@ class Filterable:
     """Provides an abstraction to implement slicing of list-of-lists elements using [] syntax;
     including multi-key slicing and lookup vice slicing if applicable"""
     def __getitem__(self, keys: slice) -> Any:
-        if hasattr(keys, '__iter__') and (
+        if hasattr(keys, '__iter__') and not isinstance(keys, str) and (
             isinstance(keys[0], str) or isinstance(keys[0], tuple)):
             return [[item[key] for item in self] for key in keys]
         else:

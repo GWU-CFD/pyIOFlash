@@ -16,7 +16,7 @@ class FigureOptions:
 
 @dataclass
 class PlotOptions:
-    title: str = 'plot title'
+    title: str = None
     labels: Tuple[str, str, str] = ('x [-]', 'y [-]', 'z [-]')
     font_size: int = 10
     font_face: str = 'Calibri'
@@ -30,6 +30,7 @@ class PlotOptions:
     vrange_lvls: int = 21
     contours_skip: int = 2
     contours_alpha: float = 0.6
+    persist: bool = False
 
 @dataclass
 class AnimationOptions:

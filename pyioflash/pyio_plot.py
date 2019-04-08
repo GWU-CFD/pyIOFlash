@@ -64,9 +64,15 @@ class SimulationPlot:
         else:
             self.anim_options = replace(AnimationOptions(), **anim_options)
 
-    def plot(self, *, axis: str, cut: float, field: str, time: Union[float, int] = -1, options: Dict[str, Any] = None) -> None:
+    def plot(self, *, cut: float, field: str, axis: str = 'z', time: Union[float, int] = -1, options: Dict[str, Any] = None) -> None:
+        if not self.plot_options.persist:
+            self.plot_options = PlotOptions()
+
         if options is not None:
             self.plot_options = replace(self.plot_options, **options)
+
+        if self.plot_options.title is None:
+            self.plot_options = replace(self.plot_options, **{'title' : f"Field = '{field}'   @ {axis} = {cut} and time = {time}"})
 
         self._simple_plot2D(field=field, plane=Plane(time=time, axis=axis, cut=cut))
 
@@ -76,11 +82,19 @@ class SimulationPlot:
     def _simple_plot2D(self, *, field: str, plane: Plane) -> None:
         fig, ax = self._make_figure()
 
-        blocks = self._blocks_from_plane(plane)
-        index, point = self._cut_from_plane(plane, blocks)
+        if self.data.geometry[plane.time].tolist()[0].grd_dim == 3:
+            blocks = self._blocks_from_plane(plane)
+            blocks = [block for block in blocks if 
+                      block in map(lambda x: x[0], self.data.geometry[plane.time].tolist()[0].blk_filtered)]
+            index, point = self._cut_from_plane(plane, blocks)
+        else:
+            plane.axis = 'z'
+            blocks = [block[0] for block in self.data.geometry[plane.time].tolist()[0].blk_filtered]
+            index, point = (0, 0.5)
 
         # plot field @ plane by blocks
-        for block in blocks:
+        print(blocks)
+        for block in blocks[:]:
             self._plot_from_block(plane=plane, field=field, block=block, index=index, axes=ax)
 
         # set figure and plot font settings
@@ -99,8 +113,8 @@ class SimulationPlot:
     
         # set plot options
         ax.set_title(self.plot_options.title, loc='left', fontproperties=font)
-        ax.set_xlim([0, 1.0])
-        ax.set_ylim([0, 1.0])
+        #ax.set_xlim([0, 1.0])
+        #ax.set_ylim([0, 1.0])
         ax.set_xlabel(_map_label[plane.axis](self.plot_options, 'x'), fontproperties=font)
         ax.set_ylabel(_map_label[plane.axis](self.plot_options, 'y'), fontproperties=font)
         ax.tick_params(axis='both', which='major', labelsize=self.plot_options.font_size)
@@ -116,11 +130,11 @@ class SimulationPlot:
  
     def _blocks_from_plane(self, plane: Plane) -> List[int]:
         return list(map(lambda block: block[0], filter(lambda bound: bound[1][0] < plane.cut <= bound[1][1],
-            enumerate(self.data.geometry[plane.time: plane.time + 1]['blk_bndbox'][0, :, _map_axes[plane.axis]][0].tolist()
+            enumerate(self.data.geometry[plane.time]['blk_bndbox'][0, :, _map_axes[plane.axis]][0].tolist()
                       ))))
 
     def _cut_from_plane(self, plane: Plane, blocks: List[int]) -> Tuple[int, float]:
-        points = self.data.geometry[plane.time: plane.time + 1][_map_grid[plane.axis]][_map_points[plane.axis](blocks[0])][0].tolist()
+        points = self.data.geometry[plane.time][_map_grid[plane.axis]][_map_points[plane.axis](blocks[0])][0].tolist()
 
         try: 
             index = _first_true(enumerate(points), lambda point: point[1] > plane.cut)[0] - 1
@@ -142,7 +156,8 @@ class SimulationPlot:
 
     def _plot_from_block(self, *, plane: Plane, field: str, block: int, index: int, 
                          axes: matplotlib.axes.Axes) -> None:
+        
         _map_plot[self.plot_options.type](axes)(
-            *tuple(self.data.geometry[plane.time: plane.time + 1][_map_mesh[plane.axis]][_map_plane[plane.axis](block, index)]),
-            self.data.fields[plane.time: plane.time + 1]['_' + field][_map_plane[plane.axis](block, index)][0],
+            *tuple(self.data.geometry[plane.time][_map_mesh[plane.axis]][_map_plane[plane.axis](block, index)]),
+            self.data.fields[plane.time]['_' + field][_map_plane[plane.axis](block, index)][0],
             levels=numpy.linspace(0, 1, 15))
