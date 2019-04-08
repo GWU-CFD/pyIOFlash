@@ -81,6 +81,9 @@ class SimulationPlot:
 
         self._simple_plot2D(field=field, plane=Plane(time=time, axis=axis, cut=cut))
 
+        if not self.fig_options.show_differed:
+            self.show()
+
     def show(self) -> None:
         pyplot.show()
 
