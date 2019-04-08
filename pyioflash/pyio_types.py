@@ -84,6 +84,7 @@ class GeometryData(_BaseData):
 
     grd_type: str = field(repr=True, init=False, compare=False)
     grd_dim: int = field(repr=True, init=False, compare=False)
+    grd_bndbox: List[Tuple[float, float]] = field(repr=False, init=False, compare=False)
     #grd_size: int = field(repr=False, init=False, compare=False) # will depreciate metrics of flatted data
     #grd_size_x: int = field(repr=False, init=False, compare=False)
     #grd_size_y: int = field(repr=False, init=False, compare=False)
@@ -119,6 +120,7 @@ class GeometryData(_BaseData):
         tree_struct: List[List[int]] = file['gid'][()].tolist()
         refine_lvls: List[List[int]] = file['refine level'][()].tolist()
         int_runtime: List[Tuple[bytes, int]] = list(file['integer runtime parameters'])
+        real_runtime: List[Tuple[bytes, int]] = list(file['real runtime parameters'])
         int_scalars: List[Tuple[bytes, int]] = list(file['integer scalars'])
         real_scalars: List[Tuple[bytes, float]] = list(file['real scalars'])
             
@@ -136,6 +138,14 @@ class GeometryData(_BaseData):
 
         # initialize grid dimensionality
         self.grd_dim = _first_true(int_scalars, lambda l: 'dimensionality' in str(l[0]))[1]
+
+        # initialize grid bounding box
+        self.grd_bndbox = [(_first_true(real_runtime, lambda l: 'xmin' in str(l[0]))[1],
+                            _first_true(real_runtime, lambda l: 'xmax' in str(l[0]))[1]),                          
+                           (_first_true(real_runtime, lambda l: 'ymin' in str(l[0]))[1],
+                            _first_true(real_runtime, lambda l: 'ymax' in str(l[0]))[1]),
+                           (_first_true(real_runtime, lambda l: 'zmin' in str(l[0]))[1],
+                            _first_true(real_runtime, lambda l: 'zmax' in str(l[0]))[1])]
 
         # initialize block data
         if self.grd_type == 'uniform':

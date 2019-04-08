@@ -39,6 +39,7 @@ class SimulationData:
         self.fields = type('TransposableAsArray_SortedDict', (TransposableAsArray, SortedDict), {})([])
         self.scalars = type('TransposableAsArray_SortedDict', (TransposableAsArray, SortedDict), {})([])
         self.dynamics = type('TransposableAsSingle_SortedDict', (TransposableAsSingle, SortedDict), {})([])
+        self.dynamics = type('TransposableAsSingle_SortedDict', (TransposableAsSingle, SortedDict), {})([])
 
         # read simulation files and store to member variables
         # -- future development of mpi4py version -> multiprocessing branch --

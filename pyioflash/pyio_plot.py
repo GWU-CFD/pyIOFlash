@@ -20,6 +20,7 @@ _map_points = {'x': lambda block : numpy.index_exp[0, block, 0, 0, :],
 _map_mesh = {'x': ('_grd_mesh_y', '_grd_mesh_z'),
              'y': ('_grd_mesh_x', '_grd_mesh_z'),
              'z': ('_grd_mesh_x', '_grd_mesh_y')}
+_map_mesh_axis = {'x': (1, 2), 'y': (0, 2), 'z': (0, 1)}
 _map_plane = {'x': lambda block, index : numpy.index_exp[0, block, :, :, index], 
               'y': lambda block, index : numpy.index_exp[0, block, :, index, :], 
               'z': lambda block, index : numpy.index_exp[0, block, index, :, :]}
@@ -64,15 +65,19 @@ class SimulationPlot:
         else:
             self.anim_options = replace(AnimationOptions(), **anim_options)
 
-    def plot(self, *, cut: float, field: str, axis: str = 'z', time: Union[float, int] = -1, options: Dict[str, Any] = None) -> None:
+    def plot(self, *, field: str, cut: float = None, axis: str = 'z', time: Union[float, int] = -1, line = None, options: Dict[str, Any] = None) -> None:
+        if cut is None:
+            low, high = self.data.geometry[time].tolist()[0].grd_bndbox[_map_axes[axis]]
+            cut = 0.5 * (high - low) + low
+
         if not self.plot_options.persist:
             self.plot_options = PlotOptions()
-
         if options is not None:
             self.plot_options = replace(self.plot_options, **options)
-
         if self.plot_options.title is None:
-            self.plot_options = replace(self.plot_options, **{'title' : f"Field = '{field}'   @ {axis} = {cut} and time = {time}"})
+            time = time if isinstance(time, float) else self.data.geometry[time].tolist()[0].key
+            cut_text = f'' if self.data.geometry[time].tolist()[0].grd_dim == 2 else f'{axis} = {cut} and '
+            self.plot_options = replace(self.plot_options, **{'title' : f"Field = '{field}'   @ " + cut_text + f'time = {time:.2f}'})
 
         self._simple_plot2D(field=field, plane=Plane(time=time, axis=axis, cut=cut))
 
@@ -93,7 +98,7 @@ class SimulationPlot:
             index, point = (0, 0.5)
 
         # plot field @ plane by blocks
-        print(blocks)
+        #print(blocks)
         for block in blocks[:]:
             self._plot_from_block(plane=plane, field=field, block=block, index=index, axes=ax)
 
@@ -113,8 +118,8 @@ class SimulationPlot:
     
         # set plot options
         ax.set_title(self.plot_options.title, loc='left', fontproperties=font)
-        #ax.set_xlim([0, 1.0])
-        #ax.set_ylim([0, 1.0])
+        ax.set_xlim(self.data.geometry[plane.time].tolist()[0].grd_bndbox[_map_mesh_axis[plane.axis][0]])
+        ax.set_ylim(self.data.geometry[plane.time].tolist()[0].grd_bndbox[_map_mesh_axis[plane.axis][1]])
         ax.set_xlabel(_map_label[plane.axis](self.plot_options, 'x'), fontproperties=font)
         ax.set_ylabel(_map_label[plane.axis](self.plot_options, 'y'), fontproperties=font)
         ax.tick_params(axis='both', which='major', labelsize=self.plot_options.font_size)
