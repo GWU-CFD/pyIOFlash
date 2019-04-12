@@ -3,8 +3,7 @@ from typing import Tuple, List, Dict, Union, Any
 
 import numpy
 import matplotlib
-import matplotlib
-from matplotlib import pyplot
+from matplotlib import pyplot, cm, lines
 from matplotlib.font_manager import FontProperties
 
 from .pyio import SimulationData
@@ -20,15 +19,33 @@ _map_points = {'x': lambda block : numpy.index_exp[0, block, 0, 0, :],
 _map_mesh = {'x': ('_grd_mesh_y', '_grd_mesh_z'),
              'y': ('_grd_mesh_x', '_grd_mesh_z'),
              'z': ('_grd_mesh_x', '_grd_mesh_y')}
+_map_mesh_line = {'xy': '_grd_mesh_z',
+                  'xz': '_grd_mesh_y',
+                  'yx': '_grd_mesh_z',
+                  'yz': '_grd_mesh_x',
+                  'zx': '_grd_mesh_y',
+                  'zy': '_grd_mesh_x'}
 _map_mesh_axis = {'x': (1, 2), 'y': (0, 2), 'z': (0, 1)}
 _map_plane = {'x': lambda block, index : numpy.index_exp[0, block, :, :, index], 
               'y': lambda block, index : numpy.index_exp[0, block, :, index, :], 
               'z': lambda block, index : numpy.index_exp[0, block, index, :, :]}
+_map_line = {'xy': lambda block, index1, index2 : numpy.index_exp[0, block, :, index2, index1], 
+             'xz': lambda block, index1, index2 : numpy.index_exp[0, block, index2, :, index1],
+             'yx': lambda block, index1, index2 : numpy.index_exp[0, block, :, index1, index2], 
+             'yz': lambda block, index1, index2 : numpy.index_exp[0, block, index2, index1, :],
+             'zx': lambda block, index1, index2 : numpy.index_exp[0, block, index1, :, index2],
+             'zy': lambda block, index1, index2 : numpy.index_exp[0, block, index1, index2, :]}
 _map_plot = {'contour' : lambda ax: ax.contour,
              'contourf' : lambda ax: ax.contourf}
 _map_label = {'x': lambda options, ax: (options.labels[1], options.labels[2])[_map_axes[ax]],
               'y': lambda options, ax: (options.labels[0], options.labels[2])[_map_axes[ax]],
               'z': lambda options, ax: (options.labels[0], options.labels[1])[_map_axes[ax]],}
+_map_line_label = {'xy': lambda options: options.labels[2], 
+                   'xz': lambda options: options.labels[1],
+                   'yx': lambda options: options.labels[2], 
+                   'yz': lambda options: options.labels[0],
+                   'zx': lambda options: options.labels[1], 
+                   'zy': lambda options: options.labels[0]}
 
 
 class SimulationPlot:
@@ -65,7 +82,8 @@ class SimulationPlot:
         else:
             self.anim_options = replace(AnimationOptions(), **anim_options)
 
-    def plot(self, *, field: str, cut: float = None, axis: str = 'z', time: Union[float, int] = -1, line = None, options: Dict[str, Any] = None) -> None:
+    def plot(self, *, field: str, cut: float = None, axis: str = 'z', time: Union[float, int] = -1, 
+             line: str = None, cutlines: List[float] = None, options: Dict[str, Any] = None) -> None:
         if cut is None:
             low, high = self.data.geometry[time].tolist()[0].grd_bndbox[_map_axes[axis]]
             cut = 0.5 * (high - low) + low
@@ -79,7 +97,11 @@ class SimulationPlot:
             cut_text = f'' if self.data.geometry[time].tolist()[0].grd_dim == 2 else f'{axis} = {cut} and '
             self.plot_options = replace(self.plot_options, **{'title' : f"Field = '{field}'   @ " + cut_text + f'time = {time:.2f}'})
 
-        self._simple_plot2D(field=field, plane=Plane(time=time, axis=axis, cut=cut))
+        if line is None:
+            self._simple_plot2D(field=field, plane=Plane(time=time, axis=axis, cut=cut))
+        else:
+            self._simple_plotLine(field=field, plane1=Plane(time=time, axis=axis, cut=cut), 
+                                  planes=[Plane(time=time, axis=line, cut=cuts) for cuts in cutlines])
 
         if not self.fig_options.show_differed:
             self.show()
@@ -101,9 +123,8 @@ class SimulationPlot:
             index, point = (0, 0.5)
 
         # plot field @ plane by blocks
-        #print(blocks)
         for block in blocks[:]:
-            self._plot_from_block(plane=plane, field=field, block=block, index=index, axes=ax)
+            self._plot2D_from_block(plane=plane, field=field, block=block, index=index, axes=ax)
 
         # set figure and plot font settings
         matplotlib.rcParams.update({'font.size': self.plot_options.font_size,
@@ -131,6 +152,65 @@ class SimulationPlot:
         # arange figure and margin
         fig.tight_layout(pad=1.10, rect=(0, 0, 1, 0.95))
 
+    def _simple_plotLine(self, *, field: str, plane1: Plane, planes: List[Plane]) -> None:
+        cmap = cm.Dark2
+        fig, ax = self._make_figure()
+
+        if self.data.geometry[plane1.time].tolist()[0].grd_dim == 3:
+            blocks = self._blocks_from_plane(plane1)
+            blocks = [block for block in blocks if 
+                      block in map(lambda x: x[0], self.data.geometry[plane1.time].tolist()[0].blk_filtered)]
+            index1, point1 = self._cut_from_plane(plane1, blocks)
+        else:
+            plane1.axis = 'z'
+            blocks = [block[0] for block in self.data.geometry[plane1.time].tolist()[0].blk_filtered]
+            index1, point1 = (0, 0.5)
+
+        label = []
+        for line, plane in enumerate(planes):
+            label.append(f'{plane.axis} = {plane.cut}')
+            if self.data.geometry[plane1.time].tolist()[0].grd_dim == 3:
+                blocks2 = [block for block in blocks if 
+                           block in self._blocks_from_plane(plane)]
+                index2, point2 = self._cut_from_plane(plane, blocks2)
+            else:
+                blocks2 = [block for block in blocks if 
+                           block in self._blocks_from_plane(plane)]
+                index2, point2 = self._cut_from_plane(plane, blocks2)
+
+            # plot field @ plane by blocks
+            for block in blocks2[:]:
+                self._plotLine_from_block(plane1=plane1, plane2=plane, field=field, block=block, 
+                                          index1=index1, index2=index2, label=label, color=cmap(line), axes=ax)
+
+        # set figure and plot font settings
+        plane2 = planes[0]
+        matplotlib.rcParams.update({'font.size': self.plot_options.font_size,
+                                    'font.family': self.plot_options.font_face})
+        font = FontProperties()
+        font.set_size(self.plot_options.font_size)
+        font.set_name(self.plot_options.font_face)
+
+        font_fig = FontProperties()
+        font_fig.set_size(self.fig_options.font_size)
+        font_fig.set_name(self.fig_options.font_face)
+
+        # set figure options
+        fig.suptitle(self.fig_options.title, ha='center', fontproperties=font_fig)
+    
+        # set plot options
+        ax.set_title(self.plot_options.title, loc='left', fontproperties=font)
+        ax.set_xlim(self.data.geometry[plane2.time].tolist()[0].grd_bndbox[_map_mesh_axis[plane2.axis][0]])
+        ax.set_xlabel(_map_line_label[plane1.axis + plane2.axis](self.plot_options), fontproperties=font)        
+        ax.tick_params(axis='both', which='major', labelsize=self.plot_options.font_size)
+        ax.tick_params(axis='both', which='minor', labelsize=self.plot_options.font_size - 2)
+
+        hdls = [lines.Line2D([], [], color=cmap(i), linestyle='-', label=label[i]) for i in range(len(planes))]
+        ax.legend(handles=hdls)
+
+        # arange figure and margin
+        fig.tight_layout(pad=1.10, rect=(0, 0, 1, 0.95))
+
     def _make_figure(self) -> Tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
         fig = pyplot.figure(figsize=self.fig_options.size_single)
         ax = fig.add_subplot(1, 1, 1)     
@@ -151,21 +231,20 @@ class SimulationPlot:
 
         return index, points[index]
 
-    #def _get_plot_vrange(self, *, plane: Plane, field: str, blocks: List[int], index: int) -> Tuple[flfloat, float]:
-    #    min = 0
-    #    max = 0
-
-        #for block in blocks:
-        #    slice = self.data.fields[plane.time: plane.time + 1][field][_map_plane[plane.axis](block, index)][0]
-        #    min = min(min, slice.min())
-        #    max = max(max, slice.max())
-
-        #return min, max
-
-    def _plot_from_block(self, *, plane: Plane, field: str, block: int, index: int, 
+    def _plot2D_from_block(self, *, plane: Plane, field: str, block: int, index: int, 
                          axes: matplotlib.axes.Axes) -> None:
         
         _map_plot[self.plot_options.type](axes)(
             *tuple(self.data.geometry[plane.time][_map_mesh[plane.axis]][_map_plane[plane.axis](block, index)]),
             self.data.fields[plane.time]['_' + field][_map_plane[plane.axis](block, index)][0],
             levels=numpy.linspace(0, 1, 15))
+
+    def _plotLine_from_block(self, *, plane1: Plane, plane2: Plane, field: str, block: int, 
+                             index1: int, index2: int, 
+                             label: str, color: Tuple[float, float, float, float], 
+                             axes: matplotlib.axes.Axes) -> None:
+        
+        pyplot.plot(
+            self.data.geometry[plane1.time][_map_mesh_line[plane1.axis + plane2.axis]][_map_line[plane1.axis + plane2.axis](block, index1, index2)][0],
+            self.data.fields[plane1.time]['_' + field][_map_line[plane1.axis + plane2.axis](block, index1, index2)][0],
+            color=color)
