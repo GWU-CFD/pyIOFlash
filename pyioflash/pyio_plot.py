@@ -83,7 +83,8 @@ class SimulationPlot:
             self.anim_options = replace(AnimationOptions(), **anim_options)
 
     def plot(self, *, field: str, cut: float = None, axis: str = 'z', time: Union[float, int] = -1, 
-             line: str = None, cutlines: List[float] = None, options: Dict[str, Any] = None) -> None:
+             line: str = None, cutlines: List[float] = None, scale: float = 1.0,
+             options: Dict[str, Any] = None) -> Tuple[Any, Any]:
         if cut is None:
             low, high = self.data.geometry[time].tolist()[0].grd_bndbox[_map_axes[axis]]
             cut = 0.5 * (high - low) + low
@@ -98,18 +99,21 @@ class SimulationPlot:
             self.plot_options = replace(self.plot_options, **{'title' : f"Field = '{field}'   @ " + cut_text + f'time = {time:.2f}'})
 
         if line is None:
-            self._simple_plot2D(field=field, plane=Plane(time=time, axis=axis, cut=cut))
+            fig, ax = self._simple_plot2D(field=field, plane=Plane(time=time, axis=axis, cut=cut))
         else:
-            self._simple_plotLine(field=field, plane1=Plane(time=time, axis=axis, cut=cut), 
-                                  planes=[Plane(time=time, axis=line, cut=cuts) for cuts in cutlines])
+            fig, ax = self._simple_plotLine(field=field, plane1=Plane(time=time, axis=axis, cut=cut), 
+                                            planes=[Plane(time=time, axis=line, cut=cuts) for cuts in cutlines],
+                                            scale=scale)
 
         if not self.fig_options.show_differed:
             self.show()
 
+        return fig, ax
+
     def show(self) -> None:
         pyplot.show()
 
-    def _simple_plot2D(self, *, field: str, plane: Plane) -> None:
+    def _simple_plot2D(self, *, field: str, plane: Plane) -> Tuple[Any, Any]:
         fig, ax = self._make_figure()
 
         if self.data.geometry[plane.time].tolist()[0].grd_dim == 3:
@@ -152,7 +156,10 @@ class SimulationPlot:
         # arange figure and margin
         fig.tight_layout(pad=1.10, rect=(0, 0, 1, 0.95))
 
-    def _simple_plotLine(self, *, field: str, plane1: Plane, planes: List[Plane]) -> None:
+        # give figure and axes to caller
+        return fig, ax
+
+    def _simple_plotLine(self, *, field: str, plane1: Plane, planes: List[Plane], scale: float) -> Tuple[Any, Any]:
         cmap = cm.Dark2
         fig, ax = self._make_figure()
 
@@ -180,7 +187,7 @@ class SimulationPlot:
 
             # plot field @ plane by blocks
             for block in blocks2[:]:
-                self._plotLine_from_block(plane1=plane1, plane2=plane, field=field, block=block, 
+                self._plotLine_from_block(plane1=plane1, plane2=plane, field=field, block=block, scale=scale,
                                           index1=index1, index2=index2, label=label, color=cmap(line), axes=ax)
 
         # set figure and plot font settings
@@ -211,6 +218,9 @@ class SimulationPlot:
         # arange figure and margin
         fig.tight_layout(pad=1.10, rect=(0, 0, 1, 0.95))
 
+        # give figure and axes to caller
+        return fig, ax
+
     def _make_figure(self) -> Tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
         fig = pyplot.figure(figsize=self.fig_options.size_single)
         ax = fig.add_subplot(1, 1, 1)     
@@ -237,14 +247,14 @@ class SimulationPlot:
         _map_plot[self.plot_options.type](axes)(
             *tuple(self.data.geometry[plane.time][_map_mesh[plane.axis]][_map_plane[plane.axis](block, index)]),
             self.data.fields[plane.time]['_' + field][_map_plane[plane.axis](block, index)][0],
-            levels=numpy.linspace(0, 1, 15))
+            levels=numpy.linspace(0, 1, 15), extend='both')
 
     def _plotLine_from_block(self, *, plane1: Plane, plane2: Plane, field: str, block: int, 
-                             index1: int, index2: int, 
+                             index1: int, index2: int, scale: float,
                              label: str, color: Tuple[float, float, float, float], 
                              axes: matplotlib.axes.Axes) -> None:
         
         pyplot.plot(
             self.data.geometry[plane1.time][_map_mesh_line[plane1.axis + plane2.axis]][_map_line[plane1.axis + plane2.axis](block, index1, index2)][0],
-            self.data.fields[plane1.time]['_' + field][_map_line[plane1.axis + plane2.axis](block, index1, index2)][0],
+            self.data.fields[plane1.time]['_' + field][_map_line[plane1.axis + plane2.axis](block, index1, index2)][0] * scale,
             color=color)

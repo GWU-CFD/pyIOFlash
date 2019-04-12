@@ -310,10 +310,10 @@ class FieldData(_BaseData):
         self._groups = set([k.decode('utf-8') for k in unknown_names])
         if form == 'chk':
             if geometry.grd_dim == 3:
-                #self._groups.update({'fcx2', 'fcy2', 'fcz2'})
+                self._groups.update({'fcx2', 'fcy2', 'fcz2'})
                 pass
             elif geometry.grd_dim == 2:
-                #self._groups.update({'fcx2', 'fcy2'})
+                self._groups.update({'fcx2', 'fcy2'})
                 pass
             else:
                 pass   

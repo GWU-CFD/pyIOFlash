@@ -29,9 +29,11 @@ class SimulationData:
         self.files = files
         
         # initialize code and file type
-        if form is None:
-            self.form = 'plt'        
-        if code is None:
+        self.form = form
+        if self.form is None:
+            self.form = 'plt'
+        self.code = code
+        if self.code is None:
             self.code = 'flash'
 
         # initialize empty containers
