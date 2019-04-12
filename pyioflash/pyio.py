@@ -29,15 +29,18 @@ class SimulationData:
         self.files = files
         
         # initialize code and file type
-        if form is None:
-            self.form = 'plt'        
-        if code is None:
+        self.form = form
+        if self.form is None:
+            self.form = 'plt'
+        self.code = code
+        if self.code is None:
             self.code = 'flash'
 
         # initialize empty containers
         self.geometry = type('TransposableAsArray_SortedDict', (TransposableAsArray, SortedDict), {})([])
         self.fields = type('TransposableAsArray_SortedDict', (TransposableAsArray, SortedDict), {})([])
         self.scalars = type('TransposableAsArray_SortedDict', (TransposableAsArray, SortedDict), {})([])
+        self.dynamics = type('TransposableAsSingle_SortedDict', (TransposableAsSingle, SortedDict), {})([])
         self.dynamics = type('TransposableAsSingle_SortedDict', (TransposableAsSingle, SortedDict), {})([])
 
         # read simulation files and store to member variables
@@ -111,7 +114,8 @@ class SimulationData:
         # process FLASH4 hdf5 files
         for num, name in enumerate(self.files.names):
             with open_hdf5(name, 'r') as file:
-                self.geometry.append(GeometryData(file, self.code, self.form))
-                self.fields.append(FieldData(file, self.code, self.form))
+                geometry: GeometryData = GeometryData(file, self.code, self.form)
+                self.geometry.append(geometry)
+                self.fields.append(FieldData(file, self.code, self.form, geometry))
                 self.scalars.append(ScalarData(file, self.code, self.form, def_scalars))
                 self.dynamics.append(StaticData(file, self.code, self.form, def_dynamics))

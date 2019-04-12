@@ -5,22 +5,23 @@
 A simple python Module for providing methods to import, process, and plot FLASH4 HDF5 plot and chk files
 
 
-   -- Revision 0.16 (alpha)
+   -- Revision 1.0.34 (pre-alpha)
 
 
    -- needed feature list --
    
-       add block neighbors to GeometryData
-       add refine level to GeometryData
-       add ability to fill in 'guard' data for blocks
-       others ???
+      general improvements to 'guard' data filling
+	  quiver and and animated plots
+	  out-of-core support
+	  [additional on github]
 
    -- major revision roadmap --
    
        initial functioning Plot Utility
+	   initial out-of-core processing
        initial multiprocessing functionality
        add parser for EDDY6 code
-       others ???
+       [additional on github]
 
 ### Usage
 ==================================
