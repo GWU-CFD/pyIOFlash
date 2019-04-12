@@ -5,13 +5,13 @@
 A simple python Module for providing methods to import, process, and plot FLASH4 HDF5 plot and chk files
 
 
-   -- Revision 1.0.29 (pre-alpha)
+   -- Revision 1.0.34 (pre-alpha)
 
 
    -- needed feature list --
    
       general improvements to 'guard' data filling
-	  quiver and line plots
+	  quiver and and animated plots
 	  out-of-core support
 	  [additional on github]
 

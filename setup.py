@@ -14,7 +14,7 @@ with open('readme.md') as readme:
 # define the setup configuration
 setup(
     name = 'pyioflash',
-    version = '1.0.29',
+    version = '1.0.34',
     description = 'A Python package for processing FLASH4 simulations.', 
     long_description = long_description,
     url = 'https://github.com/Balaras-Group/pyIOFlash',
