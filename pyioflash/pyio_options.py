@@ -1,5 +1,8 @@
+"""
+...
+"""
 from dataclasses import dataclass
-from typing import Tuple, List
+from typing import Tuple
 
 
 @dataclass
@@ -30,7 +33,7 @@ class PlotOptions:
     vrange_lvls: int = 21                       # not used
     contours_skip: int = 2          # not used
     contours_alpha: float = 0.6     # not used
-    persist: bool = False                       
+    persist: bool = False
 
 @dataclass
 class AnimationOptions:

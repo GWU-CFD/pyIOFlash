@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Any, Tuple, List, Set, Dict, Iterable, Callable, Union
+from typing import Any, List, Iterable, Callable, Union
 
 import h5py
 
@@ -9,15 +9,15 @@ def _first_true(iterable: Iterable, predictor: Callable[..., bool]) -> Any:
     return next(filter(predictor, iterable))
 
 def _filter_transpose(source: List[Any], names: Iterable[str]) -> List[List[Any]]:
-    """Returns a list of named members extracted from a 
+    """Returns a list of named members extracted from a
     collection object (source) based on a list (names)"""
     try:
-        return [list(map(lambda obj: getattr(obj, name), source)) for name in names]
+        return [list(map(lambda obj, n=name: getattr(obj, n), source)) for name in names]
     except AttributeError:
-        return [list(map(lambda obj: obj[name], source)) for name in names]
+        return [list(map(lambda obj, n=name: obj[n], source)) for name in names]
 
 def _set_is_unique(source: Iterable, sequence: Iterable, mask: Iterable = None) -> bool:
-    """Returns (True) if no member of sequence is found in source, with ability 
+    """Returns (True) if no member of sequence is found in source, with ability
     to mask members of source from comparision to members of sequence"""
     try:
         if mask is None:
@@ -54,21 +54,21 @@ class NameData:
     header: str = field(repr=False, init=True, compare=False, default='')
     footer: str = field(repr=False, init=True, compare=False, default='')
     extention: str = field(repr=False, init=True, compare=False, default='')
-    format: str = field(repr=False, init=True, compare=False, default='04d')
+    numform: str = field(repr=False, init=True, compare=False, default='04d')
     length: int = field(repr=False, init=False, compare=False)
     names: List[str] = field(repr=True, init=False, compare=True)
 
     def __post_init__(self):
-        self.names = [self.directory + self.header +  f'{n:{self.format}}' +
-                      self.footer + self.extention for n in self.numbers]
+        self.names = [self.directory + self.header +  f'{n:{self.numform}}' +
+                      self.footer + self.extention for n in self.numbers] # pylint: disable=not-an-iterable
         self.length = len(self.names)
-        
+
     @classmethod
     def from_strings(cls, names, **kwargs):
-        kwargs['format'] = ''
+        kwargs['numform'] = ''
         instance = cls(names, **kwargs)
         return instance
-    
+
     @classmethod
     def from_name(cls, name, **kwargs):
         return cls.from_strings([name], **kwargs)

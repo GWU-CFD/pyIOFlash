@@ -15,7 +15,7 @@ with open('readme.md') as readme:
 setup(
     name = 'pyioflash',
     version = '1.0.34',
-    description = 'A Python package for processing FLASH4 simulations.', 
+    description = 'A Python package for processing FLASH4 simulations.',
     long_description = long_description,
     url = 'https://github.com/Balaras-Group/pyIOFlash',
     author = 'Aaron Lentner',
