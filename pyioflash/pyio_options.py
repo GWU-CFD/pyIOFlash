@@ -1,5 +1,8 @@
+"""
+...
+"""
 from dataclasses import dataclass
-from typing import Tuple, List
+from typing import Tuple
 
 
 @dataclass
@@ -16,6 +19,7 @@ class FigureOptions:
 
 @dataclass
 class PlotOptions:
+    """ -- """
     title: str = None  # computed default
     labels: Tuple[str, str, str] = ('x [-]', 'y [-]', 'z [-]')
     font_size: int = 10
@@ -30,10 +34,11 @@ class PlotOptions:
     vrange_lvls: int = 21                       # not used
     contours_skip: int = 2          # not used
     contours_alpha: float = 0.6     # not used
-    persist: bool = False                       
+    persist: bool = False
 
 @dataclass
 class AnimationOptions:
+    """ -- """
     print_time: bool = True     # not used
     print_dt: bool = True       # not used
     interval: int = 70          # not used
