@@ -8,6 +8,10 @@ A simple python Module for providing methods to import, process, and plot FLASH4
 Information
 -----------
 
+Full package documentation can be found at the GitHub Pages for pyIOFlash_.
+
+.. _pyIOFlash: https://balaras-group.github.io/pyIOFlash/
+
 :Authors:	Aaron Lentner, Akash Dhruv
 :Revision:	1.0.44 (pre-alpha)
 
