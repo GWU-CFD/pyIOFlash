@@ -2,7 +2,7 @@
 Welcome to pyioflash's documentation!
 =====================================
 
-.. include:: readme.rst
+.. include:: ../../readme.rst
 
 Documentation Outline
 =====================

@@ -10,7 +10,7 @@ Information
 -----------
 
 :Authors:	Aaron Lentner, Akash Dhruv
-:Revision:	1.0.34 (pre-alpha)
+:Revision:	1.0.44 (pre-alpha)
 
 *Needed Feature List*
 
@@ -35,8 +35,8 @@ Quick Reference
 
   from pyio import SimulationData
 
-  data = SimulationData.from_list(range(20), path='test/',
-                                  header='INS_Rayleigh_Benard_hdf5_plt_cnt_')
+  data = SimulationData.from_list(range(20), path='../out/',
+                                  header='INS_LidDr_Cavity_hdf5_plt_cnt_')
 
   data.fields[20.0 : 60.0 : 2]['temp', 'pres'][:, :, :, :, :]
 
