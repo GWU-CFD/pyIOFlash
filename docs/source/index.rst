@@ -6,10 +6,7 @@ Full package documentation can be found at the GitHub Pages for pyIOFlash_.
 
 .. _pyIOFlash: https://balaras-group.github.io/pyIOFlash/
 
-pyIOFlash Readme
-================
-
-.. include:: readme.rst
+.. include:: ../../readme.rst
 
 Documentation Outline
 =====================
