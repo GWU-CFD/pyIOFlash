@@ -1,1 +1,232 @@
-<meta http-equiv="refresh" content="0; url=build/html/index.html" />
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Welcome to pyioflash’s documentation! &#8212; pyioflash 1.0.34 documentation</title>
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="How-To Guide" href="tutorial.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="How-To Guide"
+             accesskey="N">next</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">pyioflash 1.0.34 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="welcome-to-pyioflash-s-documentation">
+<h1>Welcome to pyioflash’s documentation!<a class="headerlink" href="#welcome-to-pyioflash-s-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="pyioflash-readme">
+<h2>pyIOFlash Readme<a class="headerlink" href="#pyioflash-readme" title="Permalink to this headline">¶</a></h2>
+<p>A simple python Module for providing methods to import, process, and plot FLASH4 HDF5 plot and chk files</p>
+<p><em>Insert more detailed description of the package here</em></p>
+<div class="section" id="information">
+<h3>Information<a class="headerlink" href="#information" title="Permalink to this headline">¶</a></h3>
+<dl class="field-list simple">
+<dt class="field-odd">Authors</dt>
+<dd class="field-odd"><p>Aaron Lentner, Akash Dhruv</p>
+</dd>
+<dt class="field-even">Revision</dt>
+<dd class="field-even"><p>1.0.34 (pre-alpha)</p>
+</dd>
+</dl>
+<p><em>Needed Feature List</em></p>
+<ul class="simple">
+<li><p>general improvements to ‘guard’ data filling</p></li>
+<li><p>quiver and and animated plots</p></li>
+<li><p>out-of-core support</p></li>
+<li><p>[additional on github]</p></li>
+</ul>
+<p><em>Major revision roadmap</em></p>
+<ul class="simple">
+<li><p>initial functioning Plot Utility</p></li>
+<li><p>initial out-of-core processing</p></li>
+<li><p>initial multiprocessing functionality</p></li>
+<li><p>add parser for EDDY6 code</p></li>
+<li><p>[additional on github]</p></li>
+</ul>
+</div>
+<div class="section" id="quick-reference">
+<h3>Quick Reference<a class="headerlink" href="#quick-reference" title="Permalink to this headline">¶</a></h3>
+<p><em>Usage</em>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyio</span> <span class="k">import</span> <span class="n">SimulationData</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">SimulationData</span><span class="o">.</span><span class="n">from_list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="s1">&#39;test/&#39;</span><span class="p">,</span>
+                                <span class="n">header</span><span class="o">=</span><span class="s1">&#39;INS_Rayleigh_Benard_hdf5_plt_cnt_&#39;</span><span class="p">)</span>
+
+<span class="n">data</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="mf">20.0</span> <span class="p">:</span> <span class="mf">60.0</span> <span class="p">:</span> <span class="mi">2</span><span class="p">][</span><span class="s1">&#39;temp&#39;</span><span class="p">,</span> <span class="s1">&#39;pres&#39;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:]</span>
+</pre></div>
+</div>
+<p><em>Reference</em></p>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 74%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head" colspan="2"><p>SimulationData</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>geometry</p></td>
+<td><p>geometry information</p></td>
+</tr>
+<tr class="row-odd"><td><p>fields</p></td>
+<td><p>simulation unknowns</p></td>
+</tr>
+<tr class="row-even"><td><p>scalars</p></td>
+<td><p>(time, dt, nstep, nbegin)</p></td>
+</tr>
+<tr class="row-odd"><td><p>dynamics</p></td>
+<td><p>remaining hdf5 plt file (time varying)</p></td>
+</tr>
+<tr class="row-even"><td><p>statics</p></td>
+<td><p>remaining hdf5 plt file (steady w/ time)</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 74%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head" colspan="2"><p>SimulationData</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>plot</p></td>
+<td><p>method for plotting 2D and line</p></td>
+</tr>
+<tr class="row-odd"><td><p>animate</p></td>
+<td><p>method for animating 2D and line plots</p></td>
+</tr>
+<tr class="row-even"><td><p>show</p></td>
+<td><p>method for showing / saving plots</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section" id="documentation-outline">
+<h2>Documentation Outline<a class="headerlink" href="#documentation-outline" title="Permalink to this headline">¶</a></h2>
+<p>The following is an outline of the pyioflash documentation …</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">How-To Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">User (API) Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="reference_data.html">SimulationData</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference_plot.html">SimulationPlot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference_options.html">SimulationOptions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="module.html">Detailed Source Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="module_pyio.html">pyio module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="module_plot.html">pyio_plot module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="module_collections.html">pyio_collections module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="module_types.html">pyio_types module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="module_utility.html">pyio_utility module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="module_options.html">pyio_options module</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Welcome to pyioflash’s documentation!</a><ul>
+<li><a class="reference internal" href="#pyioflash-readme">pyIOFlash Readme</a><ul>
+<li><a class="reference internal" href="#information">Information</a></li>
+<li><a class="reference internal" href="#quick-reference">Quick Reference</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#documentation-outline">Documentation Outline</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="tutorial.html"
+                        title="next chapter">How-To Guide</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="How-To Guide"
+             >next</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">pyioflash 1.0.34 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Aaron Lentner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.0.1.
+    </div>
+  </body>
+</html>
