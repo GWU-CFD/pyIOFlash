@@ -2,9 +2,8 @@
 Welcome to pyioflash's documentation!
 =====================================
 
-Full package documentation can be found at the GitHub Pages for pyIOFlash_.
-
-.. _pyIOFlash: https://balaras-group.github.io/pyIOFlash/
+This documentation provides an overview, how-to guide, user reference, and detailed source listing
+for the pyioflash hdf5 input / output processing tool.
 
 .. include:: ../../readme.rst
 
