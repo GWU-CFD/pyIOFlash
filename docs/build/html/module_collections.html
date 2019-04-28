@@ -1,0 +1,730 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>pyio_collections module &#8212; pyioflash 1.0.34 documentation</title>
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pyio_types module" href="module_types.html" />
+    <link rel="prev" title="pyio_plot module" href="module_plot.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="module_types.html" title="pyio_types module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="module_plot.html" title="pyio_plot module"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">pyioflash 1.0.34 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="module.html" accesskey="U">Detailed Source Reference</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-pyioflash.pyio_collections">
+<span id="pyio-collections-module"></span><h1>pyio_collections module<a class="headerlink" href="#module-pyioflash.pyio_collections" title="Permalink to this headline">¶</a></h1>
+<p>This module defines the custom collections necessary for the pyio package.</p>
+<p>The custom collection, SortedDict, composites behavior of a list and dict,
+with the added behaior that the elements remain sorted based on a key value
+that each member of the collection is required to possess.</p>
+<p>This module also defines a Base, and derived, class(es) which provide filtered,
+transpose-like viewing of multiple named members of a derived class when used in
+combination with a SortedDict.</p>
+<p class="rubric">Example</p>
+<p>An example use of a SortedDict is as follows, assuming each element loaded
+into the SortedDict instance provides an attribute, key, of type float:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">series</span> <span class="o">=</span> <span class="n">SortedDict</span><span class="p">(</span><span class="nb">iter</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>An example use of attaching traspose-like viewing to a collection class
+using the TransposableAsArray class:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">series</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="s1">&#39;MyObject&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">TransposeAsArray</span><span class="p">,</span> <span class="o">...</span><span class="p">),</span> <span class="p">{})(</span><span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition-todo admonition" id="index-0">
+<p class="admonition-title">Todo</p>
+<ul class="simple">
+<li><p>Extend SortedDict to allow type(key) other than float</p></li>
+<li><p>Improve code by refactoring out if/elif/else constructs</p></li>
+</ul>
+</div>
+<dl class="class">
+<dt id="pyioflash.pyio_collections.SortedDict">
+<em class="property">class </em><code class="descclassname">pyioflash.pyio_collections.</code><code class="descname">SortedDict</code><span class="sig-paren">(</span><em>iterable</em><span class="sig-paren">)</span><a class="headerlink" href="#pyioflash.pyio_collections.SortedDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>SortedDict is a custom collection implmenting sequence and map like behaviors.</p>
+<p>SortedDict is a mutable collection of unique items (that must implement an item.key),
+providing the following functionality:
+(1) Sequence-like fast indexable access,
+(2) Dictionary-like fast mappable access,
+(3) Collection remains ordered (invariant) based on each element’s key value,
+(4) Insert/remove (slow), append (fast if sorted), pop (fast) operations,
+(5) Collection can only contain elements with a unique key (i.e., element.key).</p>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 53%" />
+<col style="width: 47%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>High Level Usage</p></th>
+<th class="head"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>series = SortedDict(iter)</p></td>
+<td><p>Creates a collection from iter</p></td>
+</tr>
+<tr class="row-odd"><td><p>series = SortedDict.from_sorted(iter)</p></td>
+<td><p>Creates a collection from iter;
+assuming iter is sorted</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head" colspan="2"><p>Common Sequence/Mapping behavior</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>clear()</p></td>
+<td><p>Removes all the items from the collection</p></td>
+</tr>
+<tr class="row-odd"><td><p>copy()</p></td>
+<td><p>Return a shallow copy of the collection</p></td>
+</tr>
+<tr class="row-even"><td><p>sc = sa + sb</p></td>
+<td><p>Returns the concatenation of rhs collections</p></td>
+</tr>
+<tr class="row-odd"><td><p>sa += sb</p></td>
+<td><p>Extends the collection with the contents of sb</p></td>
+</tr>
+<tr class="row-even"><td><p>sa == sb</p></td>
+<td><p>Returns logical (equal) comparison of collection’s items;
+also implements analogous &lt;, &lt;=, !=, &gt;=, and &gt;</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head" colspan="2"><p>Common Sequence/Mapping behavior</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>append(x)</p></td>
+<td><p>Add an item to the end of the collection</p></td>
+</tr>
+<tr class="row-odd"><td><p>extend(x)</p></td>
+<td><p>Extends collection with the contents of t</p></td>
+</tr>
+<tr class="row-even"><td><p>insert(i, x)</p></td>
+<td><p>Inserts x into collection at the index given by i</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop([i])</p></td>
+<td><p>Returns the item at i and removes it from the collection;
+default i = -1</p></td>
+</tr>
+<tr class="row-even"><td><p>sort()</p></td>
+<td><p>Forces a sort of the collection’s items;
+otherwise defered until the last possible moment</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 24%" />
+<col style="width: 76%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head" colspan="2"><p>Map-like behavior</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>get(key[, default])</p></td>
+<td><p>Return the value for key if key is in the dictionary, else default;</p></td>
+</tr>
+<tr class="row-odd"><td><p>items()</p></td>
+<td><p>Return an iterator of the collection’s items ((key, value) pairs)</p></td>
+</tr>
+<tr class="row-even"><td><p>keys()</p></td>
+<td><p>Returns an iterator of the collection’s keys</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop([key, default])</p></td>
+<td><p>Returns the key and removes it from the collection, if present,
+else defualt; if no key, default is last element</p></td>
+</tr>
+<tr class="row-even"><td><p>popitem()</p></td>
+<td><p>Remove and return a (key, value) pair from collection;
+returned in LIFO order</p></td>
+</tr>
+<tr class="row-odd"><td><p>setdefault(default)</p></td>
+<td><p>If default.key is in collection, return value;
+otherwise insert/return default</p></td>
+</tr>
+<tr class="row-even"><td><p>update([other])</p></td>
+<td><p>Update the collection with the key/value pairs from other;
+overwriting keys</p></td>
+</tr>
+<tr class="row-odd"><td><p>values()</p></td>
+<td><p>Returns an iterator of the collections values</p></td>
+</tr>
+</tbody>
+</table>
+<p>Currently the only key type supported is float. This is not a fundemental limitation, however,
+and an implmentation will be provided in a future update to generalize the key type.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>type(element.key) must be a float</p>
+</div>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 24%" />
+<col style="width: 76%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head" colspan="2"><p>Additional notes w.r.t. access using the [] operator</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>sd[index] = value</p></td>
+<td><p>Assignment will overwrite item &#64; index and sort if necessary;
+exeption if value.key nonunique and series[index].key != value.key</p></td>
+</tr>
+<tr class="row-odd"><td><p>sd[key] = value</p></td>
+<td><p>Assignment will insert or overwrite existing item w/ equal key</p></td>
+</tr>
+<tr class="row-even"><td><p>sd[low : high : set]</p></td>
+<td><div class="line-block">
+<div class="line">(1) Works (nearly) identical to list if args are integers, and</div>
+<div class="line">(2) returns a consistant slice matching a closed interval</div>
+<div class="line-block">
+<div class="line">if args are floats, set must be int</div>
+</div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Finally, it is again noted that while the sorted property of SortedDict is invariant;
+the sorting operation is defered until the last possible moment (e.g., access, index based assignment)</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Variables</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>_data</strong> – Internal list storing the elementes of the SortedDict</p></li>
+<li><p><strong>_keys</strong> – Internal dictionary storing the key value and list index pairs</p></li>
+<li><p><strong>_is_valid</strong> – Internal state-flag used to implement just-in-time sorting</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="pyioflash.pyio_collections.SortedDict.append">
+<code class="descname">append</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#pyioflash.pyio_collections.SortedDict.append" title="Permalink to this definition">¶</a></dt>
+<dd><p>Appends an element to the end or into the collection, as appropriate.</p>
+<p>Append maintains the collection sorted, although the sort operation,
+if needed, is defered until the last possible moment.</p>
+<p>Same as list.append(obj).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>value</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – the object to be added to the collection.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyioflash.pyio_collections.SortedDict.clear">
+<code class="descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyioflash.pyio_collections.SortedDict.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears all elements from the collection.</p>
+<p>Same as list.clear().</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyioflash.pyio_collections.SortedDict.copy">
+<code class="descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyioflash.pyio_collections.SortedDict.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a shallow copy of the collection.</p>
+<p>Same as list.copy().</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A SortedDict instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyioflash.pyio_collections.SortedDict.extend">
+<code class="descname">extend</code><span class="sig-paren">(</span><em>iterable</em><span class="sig-paren">)</span><a class="headerlink" href="#pyioflash.pyio_collections.SortedDict.extend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extends the collection by an element; either onto the end or into the collection, as appropriate.</p>
+<p>Extend maintains the collection sorted, although the sort operation,
+if needed, is defered until the last possible moment.</p>
+<p>Same as list.extend(obj).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>iterable</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[+T_co]) – the object used to extend the collection</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="pyioflash.pyio_collections.SortedDict.from_sorted">
+<em class="property">classmethod </em><code class="descname">from_sorted</code><span class="sig-paren">(</span><em>iterable</em><span class="sig-paren">)</span><a class="headerlink" href="#pyioflash.pyio_collections.SortedDict.from_sorted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class method used to instantiate a SortedDict with a known to be
+sorted collection of elements.</p>
+<p>SortedDict.from_sorted(obj) does not verify obj is sorted.
+Undefined behavior results from providing an unsorted obj.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>iterable</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[+T_co]) – object used to create a SortedDict instance</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An instance of SortedDict from args.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyioflash.pyio_collections.SortedDict.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>key</em>, <em>defualt=None</em><span class="sig-paren">)</span><a class="headerlink" href="#pyioflash.pyio_collections.SortedDict.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the value for key if key is in the collection, else default.
+If default is not given, it defaults to None, so that this method never raises a KeyError.</p>
+<p>Same as dict.get(key[, default]).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – Unique key of the element to be returned</p></li>
+<li><p><strong>default</strong> (<em>optional</em>) – Return value if key is not in the collection</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The value at key if found, else, the default value.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyioflash.pyio_collections.SortedDict.insert">
+<code class="descname">insert</code><span class="sig-paren">(</span><em>key</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#pyioflash.pyio_collections.SortedDict.insert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instert an element into the collection at location of key.</p>
+<p>Same as dict[key] = value; append value if key not in collection,
+else overwite element at key with value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – Key of the element to be added to the collection</p></li>
+<li><p><strong>value</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – Value of the element to be added to the collection</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyioflash.pyio_collections.SortedDict.items">
+<code class="descname">items</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyioflash.pyio_collections.SortedDict.items" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the items in the collection.</p>
+<p>Same as dict.items().</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>List of key value pairs (as iterator) in the collection.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyioflash.pyio_collections.SortedDict.keys">
+<code class="descname">keys</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyioflash.pyio_collections.SortedDict.keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the keys in the collection.</p>
+<p>Same as dict.keys().</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>List of keys (as iterator) in the collection.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyioflash.pyio_collections.SortedDict.pop">
+<code class="descname">pop</code><span class="sig-paren">(</span><em>key=-1</em>, <em>default=None</em><span class="sig-paren">)</span><a class="headerlink" href="#pyioflash.pyio_collections.SortedDict.pop" title="Permalink to this definition">¶</a></dt>
+<dd><p>If key is in the collection, remove it and return its value, else return default.
+If default is not given and key is not in the collection, a KeyError is raised.</p>
+<p>Same as dict.pop(key[, default]).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]) – Key of the collection element to be removed</p></li>
+<li><p><strong>default</strong> (<em>optional</em>) – Return value if key is not in the collection</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Value of the element removed from the collection, if found, else, default.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyioflash.pyio_collections.SortedDict.popitem">
+<code class="descname">popitem</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyioflash.pyio_collections.SortedDict.popitem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove and return an arbitrary (key, value) pair from the collection.</p>
+<p>Same as dict.popitem().</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Key value pair of the element removed from the collection.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyioflash.pyio_collections.SortedDict.setdefault">
+<code class="descname">setdefault</code><span class="sig-paren">(</span><em>key</em>, <em>default=None</em><span class="sig-paren">)</span><a class="headerlink" href="#pyioflash.pyio_collections.SortedDict.setdefault" title="Permalink to this definition">¶</a></dt>
+<dd><p>If key is in the collection, return its value. If not, insert key
+with a value of default and return default. Default defaults to None.</p>
+<p>Same as dict.setdefault(key[, default]).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – Key of the collection element to be found</p></li>
+<li><p><strong>default</strong> (<em>optional</em>) – Return value if key is not in the collection</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Value of the element if key is in the collection, else default.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyioflash.pyio_collections.SortedDict.sort">
+<code class="descname">sort</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyioflash.pyio_collections.SortedDict.sort" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forces a sort of the collection if the collection is ‘not sorted’.</p>
+<p>The sort() method will only sort if there is currently an awaiting defered sort operation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> – Key of the collection element to be found</p></li>
+<li><p><strong>default</strong> (<em>optional</em>) – Return value if key is not in the collection</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Value of the element if key is in the collection, else default.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyioflash.pyio_collections.SortedDict.tolist">
+<code class="descname">tolist</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyioflash.pyio_collections.SortedDict.tolist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the elements of the collection as a list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A list of the elements.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyioflash.pyio_collections.SortedDict.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>iterable</em><span class="sig-paren">)</span><a class="headerlink" href="#pyioflash.pyio_collections.SortedDict.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the collection with the key/value pairs from iterable, overwriting existing keys.</p>
+<p>Same as dict.update(obj).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>iterable</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[+T_co]) – Object providing key/value pairs for append or replacement</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyioflash.pyio_collections.SortedDict.values">
+<code class="descname">values</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyioflash.pyio_collections.SortedDict.values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the values in the collection.</p>
+<p>Same as dict.values().</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>List of values (as iterator) in the collection.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pyioflash.pyio_collections.Filterable">
+<em class="property">class </em><code class="descclassname">pyioflash.pyio_collections.</code><code class="descname">Filterable</code><a class="headerlink" href="#pyioflash.pyio_collections.Filterable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provides an abstraction to implement slicing of list-of-lists elements using [] syntax;
+including multi-key slicing and lookup vice slicing if applicable</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="pyioflash.pyio_collections.BaseTransposable">
+<em class="property">class </em><code class="descclassname">pyioflash.pyio_collections.</code><code class="descname">BaseTransposable</code><a class="headerlink" href="#pyioflash.pyio_collections.BaseTransposable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstract base class for implementing a wrapper class used to provide
+filtered, transpose-like viewing of multiple named members of a derived class,
+wrapped in some fashion (must implement a _return_map method); super().self must be iterable</p>
+<dl class="attribute">
+<dt id="pyioflash.pyio_collections.BaseTransposable._abc_impl">
+<code class="descname">_abc_impl</code><em class="property"> = &lt;_abc_data object&gt;</em><a class="headerlink" href="#pyioflash.pyio_collections.BaseTransposable._abc_impl" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pyioflash.pyio_collections.BaseTransposable._return_map">
+<code class="descname">_return_map</code><span class="sig-paren">(</span><em>source</em><span class="sig-paren">)</span><a class="headerlink" href="#pyioflash.pyio_collections.BaseTransposable._return_map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pyioflash.pyio_collections.TransposableAsArray">
+<em class="property">class </em><code class="descclassname">pyioflash.pyio_collections.</code><code class="descname">TransposableAsArray</code><a class="headerlink" href="#pyioflash.pyio_collections.TransposableAsArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper class used to provide filtered,transpose-like viewing of multiple named members of
+a derived collection-like class, wrapped in numpy arrays; super().self must be iterable.</p>
+<p>An instance is created with the following syntax:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ta</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="s1">&#39;MyObject&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">TransposeAsArray</span><span class="p">,</span> <span class="o">...</span><span class="p">),</span> <span class="p">{})(</span><span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The composited object may be used as before with the following exceptions</p>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 77%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head" colspan="2"><p>Extended behavior as follows</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ta[str, …]</p></td>
+<td><div class="line-block">
+<div class="line">Returns a list-like object containing numpy arrays along the key-axis</div>
+<div class="line">for each (outer list); matching the args to members of collection</div>
+<div class="line">elements, operation is approxamatly a filtered, transpose with wrapping</div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td><p>ta[str, …][:, …]</p></td>
+<td><div class="line-block">
+<div class="line">The returned object has the added property that slicing may be applied</div>
+<div class="line">to each inner numpy array elements simultaniously with the [] notation</div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="pyioflash.pyio_collections.TransposableAsArray._abc_impl">
+<code class="descname">_abc_impl</code><em class="property"> = &lt;_abc_data object&gt;</em><a class="headerlink" href="#pyioflash.pyio_collections.TransposableAsArray._abc_impl" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pyioflash.pyio_collections.TransposableAsArray._return_map">
+<code class="descname">_return_map</code><span class="sig-paren">(</span><em>source</em><span class="sig-paren">)</span><a class="headerlink" href="#pyioflash.pyio_collections.TransposableAsArray._return_map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pyioflash.pyio_collections.TransposableAsSingle">
+<em class="property">class </em><code class="descclassname">pyioflash.pyio_collections.</code><code class="descname">TransposableAsSingle</code><a class="headerlink" href="#pyioflash.pyio_collections.TransposableAsSingle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper class used to provide filtered viewing of a single named member of a derived class,
+wrapped as a list of items; super().self must be iterable</p>
+<p>An instance is created with the following syntax:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ts</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="s1">&#39;MyObject&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">TransposeAsSingle</span><span class="p">,</span> <span class="o">...</span><span class="p">),</span> <span class="p">{})(</span><span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The composited object may be used as before with the following exceptions</p>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 77%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head" colspan="2"><p>Extended behavior as follows</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ts[str, …]</p></td>
+<td><div class="line-block">
+<div class="line">Returns a list-like object containing numpy arrays along the key-axis;</div>
+<div class="line">matching the arg to amember of collection elements,</div>
+<div class="line">operation is approximatly a filtered, transpose with wrapping</div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td><p>ts[str, …][:, …]</p></td>
+<td><div class="line-block">
+<div class="line">The returned object has the added property that lookup or slicing, as</div>
+<div class="line">appropriate, may be applied to the list elements with the [] notation</div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="pyioflash.pyio_collections.TransposableAsSingle._abc_impl">
+<code class="descname">_abc_impl</code><em class="property"> = &lt;_abc_data object&gt;</em><a class="headerlink" href="#pyioflash.pyio_collections.TransposableAsSingle._abc_impl" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pyioflash.pyio_collections.TransposableAsSingle._return_map">
+<code class="descname">_return_map</code><span class="sig-paren">(</span><em>source</em><span class="sig-paren">)</span><a class="headerlink" href="#pyioflash.pyio_collections.TransposableAsSingle._return_map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="module_plot.html"
+                        title="previous chapter">pyio_plot module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="module_types.html"
+                        title="next chapter">pyio_types module</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/module_collections.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="module_types.html" title="pyio_types module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="module_plot.html" title="pyio_plot module"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">pyioflash 1.0.34 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="module.html" >Detailed Source Reference</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Aaron Lentner.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.0.1.
+    </div>
+  </body>
+</html>
