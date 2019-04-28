@@ -2,7 +2,11 @@
 Welcome to pyioflash's documentation!
 =====================================
 
-.. include:: readme.rst
+Full package documentation can be found at the GitHub Pages for pyIOFlash_.
+
+.. _pyIOFlash: https://balaras-group.github.io/pyIOFlash/
+
+.. include:: ../../readme.rst
 
 Documentation Outline
 =====================

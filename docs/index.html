@@ -39,8 +39,9 @@
             
   <div class="section" id="welcome-to-pyioflash-s-documentation">
 <h1>Welcome to pyioflash’s documentation!<a class="headerlink" href="#welcome-to-pyioflash-s-documentation" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="pyioflash-readme">
-<h2>pyIOFlash Readme<a class="headerlink" href="#pyioflash-readme" title="Permalink to this headline">¶</a></h2>
+<p>Full package documentation can be found at the GitHub Pages for <a class="reference external" href="https://balaras-group.github.io/pyIOFlash/">pyIOFlash</a>.</p>
+<div class="section" id="pyioflash-package">
+<h2>pyIOFlash Package<a class="headerlink" href="#pyioflash-package" title="Permalink to this headline">¶</a></h2>
 <p>A simple python Module for providing methods to import, process, and plot FLASH4 HDF5 plot and chk files</p>
 <p><em>Insert more detailed description of the package here</em></p>
 <div class="section" id="information">
@@ -50,7 +51,7 @@
 <dd class="field-odd"><p>Aaron Lentner, Akash Dhruv</p>
 </dd>
 <dt class="field-even">Revision</dt>
-<dd class="field-even"><p>1.0.34 (pre-alpha)</p>
+<dd class="field-even"><p>1.0.44 (pre-alpha)</p>
 </dd>
 </dl>
 <p><em>Needed Feature List</em></p>
@@ -74,8 +75,8 @@
 <p><em>Usage</em>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyio</span> <span class="k">import</span> <span class="n">SimulationData</span>
 
-<span class="n">data</span> <span class="o">=</span> <span class="n">SimulationData</span><span class="o">.</span><span class="n">from_list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="s1">&#39;test/&#39;</span><span class="p">,</span>
-                                <span class="n">header</span><span class="o">=</span><span class="s1">&#39;INS_Rayleigh_Benard_hdf5_plt_cnt_&#39;</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">SimulationData</span><span class="o">.</span><span class="n">from_list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="s1">&#39;../out/&#39;</span><span class="p">,</span>
+                                <span class="n">header</span><span class="o">=</span><span class="s1">&#39;INS_LidDr_Cavity_hdf5_plt_cnt_&#39;</span><span class="p">)</span>
 
 <span class="n">data</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="mf">20.0</span> <span class="p">:</span> <span class="mf">60.0</span> <span class="p">:</span> <span class="mi">2</span><span class="p">][</span><span class="s1">&#39;temp&#39;</span><span class="p">,</span> <span class="s1">&#39;pres&#39;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:]</span>
 </pre></div>
@@ -174,7 +175,7 @@
   <h3><a href="#">Table of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Welcome to pyioflash’s documentation!</a><ul>
-<li><a class="reference internal" href="#pyioflash-readme">pyIOFlash Readme</a><ul>
+<li><a class="reference internal" href="#pyioflash-package">pyIOFlash Package</a><ul>
 <li><a class="reference internal" href="#information">Information</a></li>
 <li><a class="reference internal" href="#quick-reference">Quick Reference</a></li>
 </ul>
