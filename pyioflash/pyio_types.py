@@ -1,3 +1,29 @@
+"""
+
+This module defines the custom types necessary for the pyio package.
+
+The custom type, BaseData, defines the base and common behavior for the derived
+types which provide the functionality to import data from hdf5 output files.
+The common features /members to all data are a key (time stamp), an HDF5 file object,
+and a code and form string which define the code and file formating expected.
+The BaseData and derived types are implemented as data classes for simplicity and
+lack of code duplication.
+
+This module currently defines the following types and therefore data to be read from
+the hdf5 output files catagorically:
+
+    GeometryData
+    FieldData
+    ScalarData
+    StaticData
+    DynamicData
+
+
+Todo:
+    * Provide more correct and higher performance guard data filling
+    * Provide differed or Just-In-Time block data loading for large simulations
+"""
+
 from abc import ABC as AbstractBase, abstractmethod
 from dataclasses import dataclass, field, InitVar
 from typing import Any, Tuple, List, Set, Dict, Callable, Union
@@ -10,13 +36,22 @@ from .pyio_utility import _first_true, _reduce_str
 
 @dataclass(order=True)
 class _BaseData(AbstractBase):
-    # mappable member for when composited into a sortable collection object; sorted by
+    """
+    _BaseData is an abstract class implementing the common behavior
+    for all derived dataclasses which provide the functionality to
+    read the hdf5 output file data.
+
+    Attributes:
+        _key: mappable for compositting into a sortable collection object; sorted by
+        _attributes: list of named attributes loaded from file
+        file: (InitVar) h5py file object
+        form: (InitVar) the expected file format or data layout
+        code: (InitVar) the expected code associated with the output file
+
+    """
+
     key: float = field(repr=True, init=False, compare=True)
-
-    # member containing list of named attributes loaded from file
     _attributes: str = field(repr=False, init=False, compare=False)
-
-    # initialization arguments; removed after initialization
     file: InitVar[h5py.File]
     form: InitVar[str]
     code: InitVar[str]
@@ -61,13 +96,59 @@ class _BaseData(AbstractBase):
             key + wrap(self, key) for key in attrs) + ')'
 
     def keys(self) -> set:
+        """
+        Method to return the members (i.e., names of data fields) contained
+        in the data object.
+
+        Works like dict.keys(); except for the returned type
+
+        Returns:
+            A set containing the named data fields available.
+        """
         return self._attributes
 
     def todict(self) -> dict:
+        """
+        Method to return the the data object as a key, value dictionary.
+
+        Returns:
+            A dict containing the all data fields available.
+        """
         return {key : self[key] for key in self._attributes}
 
 @dataclass
 class GeometryData(_BaseData):
+    """
+    GeometryData is a derived class implementing the functionality to
+    read the relavent geometry data contained in the hdf5 output file.
+
+    Attributes:
+        blk_num: total number of blocks in the simulation (at current timestep)
+        blk_num_x: number of blocks in x direction (at current timestep)
+        blk_num_y: number of blocks in y direction (at current timestep)
+        blk_num_z: number of blocks in z direction (at current timestep)
+        blk_size_x: simulation points of each block in x direction
+        blk_size_y: simulation points of each block in y direction
+        blk_size_z: simulation points of each block in z direction
+        blk_coords: coordinates of each block center (at current timestep)
+        blk_bndbox: bounding box coordinates of each block (at current timestep)
+        blk_tree_str: tree structure containing block neighbors, parents,
+                      and children (at current timestep)
+        blk_refine: refinement level of each block (at current timestep)
+        blk_neighbors: list of neighbors and type (e.g., same refinement level)
+                       for each block (at current timestep)
+        grd_type: type of grid in the simulation (e.g., uniform or paramesh)
+        grd_dim: dimentionality of the simulation (e.g., 2d or 3d)
+        grd_bndbox: bouding box coordinates of the simulation
+        grd_mesh_x: mesh data for block data, in x direction (at current timestep)
+        grd_mesh_y: mesh data for block data, in y direction (at current timestep)
+        grd_mesh_z: mesh data for block data, in z direction (at current timestep)
+
+    Note:
+        The grid mesh data attributes return mesh coordinate data for each block
+        without filling in relavent guard cell neighbor data; if this data is
+        desired, the attribute name should be prepended with an underscore.
+    """
     blk_num: int = field(repr=False, init=False, compare=False)
     blk_num_x: int = field(repr=True, init=False, compare=False)
     blk_num_y: int = field(repr=True, init=False, compare=False)
@@ -90,8 +171,8 @@ class GeometryData(_BaseData):
     _grd_mesh_z: numpy.ndarray = field(repr=False, init=False, compare=False)
 
     @staticmethod
-    def _get_filtered_blocks(blk_tree_str, refine, level = None):
-        level = max(refine) if level is None else ( min(refine) + 1 if level < 0 else level)
+    def _get_filtered_blocks(blk_tree_str, refine, level=None):
+        level = max(refine) if level is None else (min(refine) + 1 if level < 0 else level)
         return [(id, blocks) for id, blocks in enumerate(blk_tree_str) if
                 refine[id] == level or (sum(blocks[-4:]) == -4 and refine[id] < level)]
 
@@ -212,9 +293,9 @@ class GeometryData(_BaseData):
 
         # initialize list of class member names holding the data
         setattr(self, '_attributes', {
-                'blk_num', 'blk_num_x', 'blk_num_y', 'blk_num_z', 'blk_size_x',
-                'blk_size_y', 'blk_size_z', 'blk_coords', 'blk_bndbox',
-                'grd_type', 'grd_dim', 'grd_mesh_x', 'grd_mesh_y', 'grd_mesh_z'})
+            'blk_num', 'blk_num_x', 'blk_num_y', 'blk_num_z', 'blk_size_x',
+            'blk_size_y', 'blk_size_z', 'blk_coords', 'blk_bndbox',
+            'grd_type', 'grd_dim', 'grd_mesh_x', 'grd_mesh_y', 'grd_mesh_z'})
 
     @staticmethod
     def _shift_block_ids(blocks, shift):
@@ -230,6 +311,12 @@ class GeometryData(_BaseData):
 
     @property
     def grd_mesh_x(self):
+        """
+        Method to provide the property grd_mesh_x.
+
+        Returns:
+            Mesh data for block data, in x direction (at current timestep)
+        """
         return self._grd_mesh_x[:, :-1, :-1, :-1]
 
     @grd_mesh_x.setter
@@ -238,6 +325,12 @@ class GeometryData(_BaseData):
 
     @property
     def grd_mesh_y(self):
+        """
+        Method to provide the property grd_mesh_y.
+
+        Returns:
+            Mesh data for block data, in y direction (at current timestep)
+        """
         return self._grd_mesh_y[:, :-1, :-1, :-1]
 
     @grd_mesh_y.setter
@@ -246,6 +339,12 @@ class GeometryData(_BaseData):
 
     @property
     def grd_mesh_z(self):
+        """
+        Method to provide the property grd_mesh_z.
+
+        Returns:
+            Mesh data for block data, in z direction (at current timestep)
+        """
         return self._grd_mesh_z[:, :-1, :-1, :-1]
 
     @grd_mesh_z.setter
@@ -254,6 +353,24 @@ class GeometryData(_BaseData):
 
 @dataclass
 class FieldData(_BaseData):
+    """
+    FieldData is a derived class implementing the functionality to
+    read the relavent scalar and vector field data contained in the
+    hdf5 output file.
+
+    Attributes:
+        geometry: (InitVar) corrisponding GeometryData instance required for initialization
+        _groups: set of named field data in the hdf4 output file
+
+    Notes:
+        The FieldData instance also contains attributes corrisponding to each named
+        field in the output file (i.e., _groups) that is created dynamically as the
+        hdf5 output file is read.
+
+        The field data attributes return the named field data for each block
+        without filling in relavent guard cell neighbor data; if this data is
+        desired, the attribute name should be prepended with an underscore.
+    """
     geometry: InitVar[GeometryData]
     _groups: Set[str] = field(repr=True, init=False, compare=False)
 
@@ -263,7 +380,7 @@ class FieldData(_BaseData):
                    'y': lambda block, index: numpy.index_exp[block, :, index, :],
                    'z': lambda block, index: numpy.index_exp[block, index, :, :]}
 
-        map_type = {0: lambda data, _, guard, dir: data[map_dir[dir](guard,  0)],
+        map_type = {0: lambda data, _, guard, dir: data[map_dir[dir](guard, 0)],
                     1: lambda data, block, _, dir: data[map_dir[dir](block, -2)] * 0.0 - 10.0,
                     2: lambda data, block, _, dir: data[map_dir[dir](block, -2)]}
         y_fix = 2 if geometry.grd_type == 'uniform' else 3
@@ -284,7 +401,7 @@ class FieldData(_BaseData):
         self.key = float(_first_true(real_scalars, lambda l: 'time' in str(l[0]))[1])
 
         # initialize named fields
-        self._groups = set([k.decode('utf-8') for k in unknown_names])
+        self._groups = {k.decode('utf-8') for k in unknown_names}
         if form == 'chk':
             if geometry.grd_dim == 3:
                 self._groups.update({'fcx2', 'fcy2', 'fcz2'})
@@ -326,8 +443,20 @@ class FieldData(_BaseData):
 
 @dataclass
 class ScalarData(_BaseData):
-    # specification of parameters used to import scalars from hdf5 file;
-    # of the format -- [(group, dataset, type), ...]
+    """
+    ScalarData is a derived class implementing the functionality to
+    read the relavent scalar data (e.g., time, dt, iteration count)
+    contained in the hdf5 output file.
+
+    Attributes:
+        _groups: specification of parameters used to import scalars from hdf5 file
+
+    Note:
+        The group specification attribute is required at the time of instanciation
+        in order to read the desired data from the hdf5 output file.
+
+    """
+    # parameter specification, format of -- [(group, dataset, type), ...]
     _groups: List[Tuple[str, str, str]] = field(repr=True, init=True, compare=False)
 
     def __str__(self) -> str:
@@ -352,8 +481,24 @@ class ScalarData(_BaseData):
 
 @dataclass
 class StaticData(_BaseData):
-    # specification of parameters used to import static data from a hdf5;
-    # of the format -- [group ...]
+    """
+    StaticData is a derived class implementing the functionality to
+    read desired data wich does not conform to geometry, field, or scalar
+    data information (e.g., input parameters) contained in the hdf5 output file.
+
+    Attributes:
+        _groups: specification of parameters used to import scalars from hdf5 file
+
+    Notes:
+        The group specification attribute is required at the time of instanciation
+        in order to read the desired data from the hdf5 output file.
+
+        StaticData instances may be collected into a SortedDict, for example, in
+        order to provide for simulation data which changes throughout the simulation
+        but does not conform to geometry, field, or scalar information.
+
+    """
+    # parameter specification, format of -- [group ...]
     _groups: List[Tuple[str, Callable]] = field(repr=True, init=True, compare=False)
 
     def __str__(self) -> str:
@@ -361,6 +506,17 @@ class StaticData(_BaseData):
 
     @staticmethod
     def decode_label(label: Union[bytes, str]) -> str:
+        """
+        Class method used as a helper method to provide the functionality
+        to appropriatly decode either the hdf5 dataset name/label or dataset values
+        stored as byte array data into utf-8 strings.
+
+        Args:
+            label: data to be decoded, either a byte array or string
+
+        Returns:
+            decoded data represented as a utf-8 string
+        """
         try:
             return label.decode('utf-8')
         except AttributeError:
@@ -385,4 +541,15 @@ class StaticData(_BaseData):
 
     @staticmethod
     def pass_label(label: str) -> str:
+        """
+        Class method used as a helper method to provide a pass through when a callable
+        is expected but the relavent data does not need to be decoded;
+        see StaticData.decode_label().
+
+        Args:
+            label: data to be passed through
+
+        Returns:
+            Unmodified argument data
+        """
         return label

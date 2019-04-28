@@ -19,6 +19,7 @@ class FigureOptions:
 
 @dataclass
 class PlotOptions:
+    """ -- """
     title: str = None  # computed default
     labels: Tuple[str, str, str] = ('x [-]', 'y [-]', 'z [-]')
     font_size: int = 10
@@ -37,6 +38,7 @@ class PlotOptions:
 
 @dataclass
 class AnimationOptions:
+    """ -- """
     print_time: bool = True     # not used
     print_dt: bool = True       # not used
     interval: int = 70          # not used

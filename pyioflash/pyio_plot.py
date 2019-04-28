@@ -1,5 +1,7 @@
-"""
-...
+"""A python module for implementing the SimulationPlot class.
+
+This class is one of the most useful of the pyIOFlash package; providing methods to
+convienently and intuitively create 2D and Line plots of simulation output data.
 """
 from typing import Tuple, List, Dict, Union, Any
 from dataclasses import replace
@@ -52,8 +54,69 @@ _map_line_label = {'xy': lambda options: options.labels[2],
 
 
 class SimulationPlot:
-    """
-    ...
+    """A class providing methods and helper routines to plot hdf5 output file data.
+
+    When a SimulationPlot instance is created with a SimulationData instance, the user is provided
+    methods to plot simple 2D contour or density plots, Quiver plots, and Line plots.::
+
+        from pyio import SimulationPlot
+
+        ... create SimulationData instance, data
+
+        visual = SimulationPlot(data, fig_options={key : value, ...},
+                                      plot_options={key : value, ...},
+                                      anim_options={key : value, ...})
+
+        visual.plot(axis='x', cut=0.5, field='temp')
+
+        visual.show()
+
+    Note:
+
+        None of fig_options, plot_options, or anim_options values are needed if the defualt
+        behavior is acceptable for the desired plotting.
+
+    The basic usage of the class is as follows: (1) import the class from the package, (2) create an instance
+    of the class by providing the necessary SimulationData instance, and (3) use the class
+    instance methods to create desired plot output.
+
+    The general format for plotting 2D field data is::
+
+        instance.plot[axis=__, cut=__, field='name', options={key : value, ...}]
+
+    The general format for plotting Lines from field data is ::
+
+        instance.plot[axis=__, cut=__, field='name', line=__, cutlines=[__, ...],
+                                                     scale=__, options={key : value, ...}]
+
+    The general format for modifying figure options after instanciation
+
+        *methods not currenlty implemented*
+
+    *Wherein the following definitions are used*:
+
+    - The planer cut is defined by equation axis = cut (e.g. z = 0.5)
+    - For line plots, plotted lines are the product of two planer intersections,
+      where the secondary plane may be several values of a dimension to produce multiple
+      co-plotted lines for convienence, as follows:
+
+        - The primary plane, axis = cut (e.g., z = 0.5)
+        - The secondary plane, line = cutline[0], cutline[1], ...
+
+    - For both 2D contour and Line plots, field='name', provides the name of the data
+    - Scale defines the scale multipler applied, if desired, to the field data before
+      plotting the relavent lines.
+
+    Finally, the class ploting methods return the relavent generated plot figures and  axes
+    such that additional manual plot additions and modifications can be made befor the call
+    to the instance show() method, as is possible with just the figure and axis handles.
+
+    Attributes:
+        data (SimulationData): data object containing the processed simulation output
+        fig_options (FigureOptions): useful figure options for modification
+        plot_options (PlotOptions): useful plot options for modification
+        anim_options (AnimationOptions): useful animation options for modification
+
     """
     data: SimulationData
     fig_options: FigureOptions

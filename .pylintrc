@@ -11,7 +11,7 @@ ignore=CVS
 
 # Add files or directories matching the regex patterns to the blacklist. The
 # regex matches against base names, not paths.
-ignore-patterns=
+ignore-patterns=conf.py
 
 # Python code to execute, usually for sys.path manipulation such as
 # pygtk.require().
@@ -240,6 +240,9 @@ good-names=c,
 	       x,
 	       y,
 	       z,
+		   X,
+		   Y,
+		   Z,
            ex,
            Run,
            _
@@ -481,7 +484,7 @@ valid-metaclass-classmethod-first-arg=mcs
 max-args=15
 
 # Maximum number of attributes for a class (see R0902).
-max-attributes=17
+max-attributes=30
 
 # Maximum number of boolean expressions in a if statement
 max-bool-expr=5
