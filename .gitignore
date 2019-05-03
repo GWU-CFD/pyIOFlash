@@ -8,4 +8,5 @@
 /pyioflash/__pycache__
 /.vs
 /docs/_build
-/docs/make
+/docs/_sources
+/docs/_static
