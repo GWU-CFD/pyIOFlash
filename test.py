@@ -48,7 +48,13 @@ SCALE = 19/0.1
 # Visualize Code Output
 #DATA = SimulationData.from_list([681], path='../../../amr/', header='INS_LidDr_Cavity_hdf5_plt_cnt_')
 #DATA = SimulationData.from_list(range(5), path='../../../qual2/', header='INS_Rayleigh_Benard_hdf5_plt_cnt_')
-DATA = SimulationData.from_list([1], path='../../../rb3_1e/', header='INS_Rayleigh_Benard_hdf5_plt_cnt_')
+#DATA = SimulationData.from_list([1], path='../../../rb3_1e/', header='INS_Rayleigh_Benard_hdf5_plt_cnt_')
+#VISUAL = SimulationPlot(DATA)
+#VISUAL.plot(axis='x', cut=0.5, field='temp')
+#VISUAL.show()
+
+# Introduce Noise into sim
+DATA = SimulationData.from_list([4], path='../../../rb3_1e6/', header='INS_Rayleigh_Benard_hdf5_plt_cnt_')
 VISUAL = SimulationPlot(DATA)
-VISUAL.plot(axis='x', cut=0.5, field='temp')
+VISUAL.plot(axis='x', cut=0.5, field='temp', time=-1)
 VISUAL.show()
