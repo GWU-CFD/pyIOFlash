@@ -42,7 +42,7 @@ class _BaseData(AbstractBase):
     read the hdf5 output file data.
 
     Attributes:
-        _key: mappable for compositting into a sortable collection object; sorted by
+        key: mappable for compositting into a sortable collection object; sorted by
         _attributes: list of named attributes loaded from file
         file: (InitVar) h5py file object
         form: (InitVar) the expected file format or data layout
@@ -429,16 +429,16 @@ class FieldData(_BaseData):
 
             # attach dataset to FieldData instance
             setattr(self, '_' + group, data)
-            setattr(FieldData, group, property(partial(self._get_attr, attr='_' + group),
-                                               partial(self._set_attr, attr='_' + group)))
+            setattr(FieldData, group, property(partial(FieldData._get_attr, attr='_' + group),
+                                               partial(FieldData._set_attr, attr='_' + group)))
 
         # initialize list of class member names holding the data
         setattr(self, '_attributes', {group for group in self._groups})
 
-    def _set_attr(self, _, value, attr):
+    def _set_attr(self, value, attr):
         getattr(self, attr)[:, :-1, :-1, :-1] = value
 
-    def _get_attr(self, _, attr):
+    def _get_attr(self, attr):
         return getattr(self, attr)[:, :-1, :-1, :-1]
 
 @dataclass

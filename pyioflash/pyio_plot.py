@@ -16,6 +16,8 @@ from .pyio_utility import _first_true
 from .pyio_utility import Plane
 from .pyio_options import FigureOptions, PlotOptions, AnimationOptions
 
+
+
 _map_axes = {'x': 0, 'y': 1, 'z': 2}
 _map_grid = {'x': 'grd_mesh_x', 'y': 'grd_mesh_y', 'z': 'grd_mesh_z'}
 _map_points = {'x': lambda block : numpy.index_exp[0, block, 0, 0, :],
@@ -315,6 +317,15 @@ class SimulationPlot:
 
     def _plot2D_from_block(self, *, plane: Plane, field: str, block: int, index: int,
                          axes: matplotlib.axes.Axes) -> None:
+
+        #_map_plot_type - _map_plot
+        #_map_mesh_grid - _map_mesh
+        #_map_grid_inds - _map_plane ----
+        #_map_mesh_line - _map_mesh_line
+        #_map_line_inds - _map_line ----
+        #_map_mesh      - _map_grid
+        #_map_pnts      - _map_points ----
+        #_map_line_lbls - _map_line_label
 
         _map_plot[self.plot_options.type](axes)(
             *tuple(self.data.geometry[plane.time][_map_mesh[plane.axis]][_map_plane[plane.axis](block, index)]),

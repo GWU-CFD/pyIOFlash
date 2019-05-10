@@ -32,18 +32,19 @@ U_S7 = [0.00, -19.00, -77.00, -78.00, -75.00, -69.00, -56.00, -42.00, -26.00, -1
 SCALE = 19/0.1
 
 # Comparision to Experiment
-#DATA = SimulationData.from_list([2], path='../../../qual2/', header='INS_Rayleigh_Benard_hdf5_chk_', form='chk')
-#VISUAL = SimulationPlot(DATA, fig_options={'title': f'Rayleigh Benard Convection'})
-#VISUAL.plot(axis='x', cut=0.5, field='temp')
-#FIG1, AX1 = VISUAL.plot(axis='x', cut=0.5, field='fcz2', line='z', cutlines=[0.5], scale=SCALE)
-#AX1.plot(x[::-1], W_S2, '.b')
-#AX1.plot(x[::-1], W_S1, '.r')
-#AX1.plot(x[::-1], W_S7, '.g')
-#FIG2, AX2 = VISUAL.plot(axis='x', cut=0.5, field='fcy2', line='y', cutlines=[0.5], scale=SCALE)
-#AX2.plot(z[::-1], U_S2, '.b')
-#AX2.plot(z[::-1], U_S1, '.r')
-#AX2.plot(z[::-1], U_S7, '.g')
-#VISUAL.show()
+DATA = SimulationData.from_list([3, 4], path='../../../rb3_1e5_2/',
+                                header='INS_Rayleigh_Benard_hdf5_chk_', form='chk')
+VISUAL = SimulationPlot(DATA, fig_options={'title': f'Rayleigh Benard Convection'})
+VISUAL.plot(axis='x', cut=0.5, field='temp', time=0)
+FIG1, AX1 = VISUAL.plot(axis='x', cut=0.5, field='fcz2', time=1, line='z', cutlines=[0.5], scale=SCALE)
+AX1.plot(x[::-1], W_S2, '.b')
+AX1.plot(x[::-1], W_S1, '.r')
+AX1.plot(x[::-1], W_S7, '.g')
+FIG2, AX2 = VISUAL.plot(axis='x', cut=0.5, field='fcy2', time=1, line='y', cutlines=[0.5], scale=SCALE)
+AX2.plot(z[::-1], U_S2, '.b')
+AX2.plot(z[::-1], U_S1, '.r')
+AX2.plot(z[::-1], U_S7, '.g')
+VISUAL.show()
 
 # Visualize Code Output
 #DATA = SimulationData.from_list([681], path='../../../amr/', header='INS_LidDr_Cavity_hdf5_plt_cnt_')
@@ -54,7 +55,9 @@ SCALE = 19/0.1
 #VISUAL.show()
 
 # Introduce Noise into sim
-DATA = SimulationData.from_list([4], path='../../../rb3_1e6/', header='INS_Rayleigh_Benard_hdf5_plt_cnt_')
-VISUAL = SimulationPlot(DATA)
-VISUAL.plot(axis='x', cut=0.5, field='temp', time=-1)
-VISUAL.show()
+#DATA = SimulationData.from_list([0, 10, 19], path='../../../rb3_1e5_2/',
+#                                header='INS_Rayleigh_Benard_hdf5_plt_cnt_')
+#VISUAL = SimulationPlot(DATA)
+#for i in range(3):
+#    VISUAL.plot(axis='z', cut=0.5, field='temp', time=i)
+#VISUAL.show()
