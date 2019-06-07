@@ -17,42 +17,41 @@ from .pyio_utility import Plane
 from .pyio_options import FigureOptions, PlotOptions, AnimationOptions
 
 
-
 _map_axes = {'x': 0, 'y': 1, 'z': 2}
-_map_grid = {'x': 'grd_mesh_x', 'y': 'grd_mesh_y', 'z': 'grd_mesh_z'}
-_map_points = {'x': lambda block : numpy.index_exp[0, block, 0, 0, :],
+_map_mesh = {'x': 'grd_mesh_x', 'y': 'grd_mesh_y', 'z': 'grd_mesh_z'}
+_map_pnts = {'x': lambda block : numpy.index_exp[0, block, 0, 0, :],
              'y': lambda block : numpy.index_exp[0, block, 0, :, 0],
              'z': lambda block : numpy.index_exp[0, block, :, 0, 0]}
-_map_mesh = {'x': ('_grd_mesh_y', '_grd_mesh_z'),
-             'y': ('_grd_mesh_x', '_grd_mesh_z'),
-             'z': ('_grd_mesh_x', '_grd_mesh_y')}
+_map_mesh_axis = {'x': (1, 2), 'y': (0, 2), 'z': (0, 1)}
+_map_mesh_grid = {'x': ('_grd_mesh_y', '_grd_mesh_z'),
+                  'y': ('_grd_mesh_x', '_grd_mesh_z'),
+                  'z': ('_grd_mesh_x', '_grd_mesh_y')}
 _map_mesh_line = {'xy': '_grd_mesh_z',
                   'xz': '_grd_mesh_y',
                   'yx': '_grd_mesh_z',
                   'yz': '_grd_mesh_x',
                   'zx': '_grd_mesh_y',
                   'zy': '_grd_mesh_x'}
-_map_mesh_axis = {'x': (1, 2), 'y': (0, 2), 'z': (0, 1)}
-_map_plane = {'x': lambda block, index : numpy.index_exp[0, block, :, :, index],
-              'y': lambda block, index : numpy.index_exp[0, block, :, index, :],
-              'z': lambda block, index : numpy.index_exp[0, block, index, :, :]}
-_map_line = {'xy': lambda block, index1, index2 : numpy.index_exp[0, block, :, index2, index1],
-             'xz': lambda block, index1, index2 : numpy.index_exp[0, block, index2, :, index1],
-             'yx': lambda block, index1, index2 : numpy.index_exp[0, block, :, index1, index2],
-             'yz': lambda block, index1, index2 : numpy.index_exp[0, block, index2, index1, :],
-             'zx': lambda block, index1, index2 : numpy.index_exp[0, block, index1, :, index2],
-             'zy': lambda block, index1, index2 : numpy.index_exp[0, block, index1, index2, :]}
-_map_plot = {'contour' : lambda ax: ax.contour,
-             'contourf' : lambda ax: ax.contourf}
-_map_label = {'x': lambda options, ax: (options.labels[1], options.labels[2])[_map_axes[ax]],
-              'y': lambda options, ax: (options.labels[0], options.labels[2])[_map_axes[ax]],
-              'z': lambda options, ax: (options.labels[0], options.labels[1])[_map_axes[ax]],}
-_map_line_label = {'xy': lambda options: options.labels[2],
-                   'xz': lambda options: options.labels[1],
-                   'yx': lambda options: options.labels[2],
-                   'yz': lambda options: options.labels[0],
-                   'zx': lambda options: options.labels[1],
-                   'zy': lambda options: options.labels[0]}
+_map_grid_inds = {'x': lambda block, index : numpy.index_exp[0, block, :, :, index],
+                  'y': lambda block, index : numpy.index_exp[0, block, :, index, :],
+                  'z': lambda block, index : numpy.index_exp[0, block, index, :, :]}
+_map_line_inds = {'xy': lambda block, index1, index2 : numpy.index_exp[0, block, :, index2, index1],
+                  'xz': lambda block, index1, index2 : numpy.index_exp[0, block, index2, :, index1],
+                  'yx': lambda block, index1, index2 : numpy.index_exp[0, block, :, index1, index2],
+                  'yz': lambda block, index1, index2 : numpy.index_exp[0, block, index2, index1, :],
+                  'zx': lambda block, index1, index2 : numpy.index_exp[0, block, index1, :, index2],
+                  'zy': lambda block, index1, index2 : numpy.index_exp[0, block, index1, index2, :]}
+_map_plot_type = {'contour' : lambda ax: ax.contour,
+                  'contourf' : lambda ax: ax.contourf}
+_map_grid_lbls = {'x': lambda options, ax: (options.labels[1], options.labels[2])[_map_axes[ax]],
+                  'y': lambda options, ax: (options.labels[0], options.labels[2])[_map_axes[ax]],
+                  'z': lambda options, ax: (options.labels[0], options.labels[1])[_map_axes[ax]],}
+_map_line_lbls = {'xy': lambda options: options.labels[2],
+                  'xz': lambda options: options.labels[1],
+                  'yx': lambda options: options.labels[2],
+                  'yz': lambda options: options.labels[0],
+                  'zx': lambda options: options.labels[1],
+                  'zy': lambda options: options.labels[0]}
 
 
 class SimulationPlot:
@@ -220,8 +219,8 @@ class SimulationPlot:
         ax.set_title(self.plot_options.title, loc='left', fontproperties=font)
         ax.set_xlim(self.data.geometry[plane.time].tolist()[0].grd_bndbox[_map_mesh_axis[plane.axis][0]])
         ax.set_ylim(self.data.geometry[plane.time].tolist()[0].grd_bndbox[_map_mesh_axis[plane.axis][1]])
-        ax.set_xlabel(_map_label[plane.axis](self.plot_options, 'x'), fontproperties=font)
-        ax.set_ylabel(_map_label[plane.axis](self.plot_options, 'y'), fontproperties=font)
+        ax.set_xlabel(_map_grid_lbls[plane.axis](self.plot_options, 'x'), fontproperties=font)
+        ax.set_ylabel(_map_grid_lbls[plane.axis](self.plot_options, 'y'), fontproperties=font)
         ax.tick_params(axis='both', which='major', labelsize=self.plot_options.font_size)
         ax.tick_params(axis='both', which='minor', labelsize=self.plot_options.font_size - 2)
 
@@ -281,7 +280,7 @@ class SimulationPlot:
         # set plot options
         ax.set_title(self.plot_options.title, loc='left', fontproperties=font)
         ax.set_xlim(self.data.geometry[plane2.time].tolist()[0].grd_bndbox[_map_mesh_axis[plane2.axis][0]])
-        ax.set_xlabel(_map_line_label[plane1.axis + plane2.axis](self.plot_options), fontproperties=font)
+        ax.set_xlabel(_map_line_lbls[plane1.axis + plane2.axis](self.plot_options), fontproperties=font)
         ax.tick_params(axis='both', which='major', labelsize=self.plot_options.font_size)
         ax.tick_params(axis='both', which='minor', labelsize=self.plot_options.font_size - 2)
 
@@ -305,8 +304,21 @@ class SimulationPlot:
                       ))))
 
     def _cut_from_plane(self, plane: Plane, blocks: List[int]) -> Tuple[int, float]:
-        points = self.data.geometry[plane.time][
-            _map_grid[plane.axis]][_map_points[plane.axis](blocks[0])][0].tolist()
+        """
+        A method to calculate the index and spatial value of a planner cut across a block.
+
+        -- insert longer description here --
+
+        Args:
+            plane: desired cut plane wich intersects the block
+            blocks:
+
+        Returns:
+            The index and value along the cut axis at the cut point within the block
+        """
+        grid = _map_mesh[plane.axis]
+        inds = _map_pnts[plane.axis](blocks[0])
+        points = self.data.geometry[plane.time][grid][inds][0].tolist()
 
         try:
             index = _first_true(enumerate(points), lambda point: point[1] > plane.cut)[0] - 1
@@ -316,29 +328,55 @@ class SimulationPlot:
         return index, points[index]
 
     def _plot2D_from_block(self, *, plane: Plane, field: str, block: int, index: int,
-                         axes: matplotlib.axes.Axes) -> None:
+                           axes: matplotlib.axes.Axes) -> matplotlib.contour.QuadContourSet:
+        """
+        A method to plot a single requested block on an axis of a two-dimensional type (e.g., contourf).
 
-        #_map_plot_type - _map_plot
-        #_map_mesh_grid - _map_mesh
-        #_map_grid_inds - _map_plane ----
-        #_map_mesh_line - _map_mesh_line
-        #_map_line_inds - _map_line ----
-        #_map_mesh      - _map_grid
-        #_map_pnts      - _map_points ----
-        #_map_line_lbls - _map_line_label
+        -- insert longer description here --
 
-        _map_plot[self.plot_options.type](axes)(
-            *tuple(self.data.geometry[plane.time][_map_mesh[plane.axis]][_map_plane[plane.axis](block, index)]),
-            self.data.fields[plane.time]['_' + field][_map_plane[plane.axis](block, index)][0],
-            levels=numpy.linspace(0, 1, 15), extend='both')
+        Args:
+            plane: plane from which the plotting data is taken
+            field: scalar or vector field of the desired plot
+            block: block in the data structure to plot from
+            index: index (along the planer direction) within the block
+            axes: matplotlib axes object used to draw the plot
+
+        Returns:
+            A matplotlib object referencing the drawn plot
+        """
+        plot = _map_plot_type[self.plot_options.type](axes)
+        grid = _map_mesh_grid[plane.axis]
+        inds = _map_grid_inds[plane.axis](block, index)
+        mesh = tuple(self.data.geometry[plane.time][grid][inds])
+        data = self.data.fields[plane.time]['_' + field][inds][0]
+        return plot(*mesh, data, levels=numpy.linspace(0, 1, 15), extend='both')
 
     def _plotLine_from_block(self, *, plane1: Plane, plane2: Plane, field: str, block: int,
                              index1: int, index2: int, scale: float,
                              color: Tuple[float, float, float, float],
-                             axes: matplotlib.axes.Axes) -> None:
+                             axes: matplotlib.axes.Axes) -> matplotlib.lines.Line2D:
+        """
+        A method to plot a single requested block on an axis of a line type (e.g., plot).
 
-        pyplot.plot(
-            self.data.geometry[plane1.time][_map_mesh_line[plane1.axis + plane2.axis]][
-                _map_line[plane1.axis + plane2.axis](block, index1, index2)][0],
-            self.data.fields[plane1.time]['_' + field][
-                _map_line[plane1.axis + plane2.axis](block, index1, index2)][0] * scale, color=color)
+        -- insert longer description here --
+
+        Args:
+            plane1: first of intersecting planes from which the data is taken
+            plane2: second of intersecting planes from which the data is taken
+            field: scalar or vector field of the desired plot
+            block: block in the data structure to plot from
+            index1: index (along the first planer direction) within the block
+            index2: index (along the second planer direction) within the block
+            scale: scale factor applied to the data prior to plotting
+            color: line color when plotting
+            axes: matplotlib axes object used to draw the plot
+
+        Returns:
+            A matplotlib object referencing the drawn plot
+        """
+        plot = pyplot.plot
+        line = _map_mesh_line[plane1.axis + plane2.axis]
+        inds = _map_line_inds[plane1.axis + plane2.axis](block, index1, index2)
+        pnts = self.data.geometry[plane1.time][line][inds][0]
+        data = self.data.fields[plane1.time]['_' + field][inds][0] * scale
+        return plot(pnts, data, color=color)
