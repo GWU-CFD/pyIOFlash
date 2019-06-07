@@ -195,7 +195,7 @@ class SimulationPlot:
         else:
             plane.axis = 'z'
             blocks = [block[0] for block in self.data.geometry[plane.time].tolist()[0].blk_filtered]
-            index, _ = (0, 0.5)
+            index, _ = (1, 0.5)
 
         # plot field @ plane by blocks
         for block in blocks[:]:
@@ -243,7 +243,7 @@ class SimulationPlot:
         else:
             plane1.axis = 'z'
             blocks = [block[0] for block in self.data.geometry[plane1.time].tolist()[0].blk_filtered]
-            index1, _ = (0, 0.5)
+            index1, _ = (1, 0.5)
 
         label = []
         for line, plane in enumerate(planes):

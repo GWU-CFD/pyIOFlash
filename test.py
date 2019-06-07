@@ -47,11 +47,15 @@ SCALE = 19/0.1
 #VISUAL.show()
 
 # Visualize Code Output
-#DATA = SimulationData.from_list([681], path='../../../amr/', header='INS_LidDr_Cavity_hdf5_plt_cnt_')
+#DATA = SimulationData.from_list([600], path='../../../amr/', header='INS_LidDr_Cavity_hdf5_plt_cnt_')
 #DATA = SimulationData.from_list(range(5), path='../../../qual2/', header='INS_Rayleigh_Benard_hdf5_plt_cnt_')
-DATA = SimulationData.from_list([10], path='../../../tg2/', header='INS_Taylor_Green_hdf5_plt_cnt_')
+#DATA = SimulationData.from_list([2], path='../../../qual2/', header='INS_Rayleigh_Benard_hdf5_chk_', form='chk')
+#DATA = SimulationData.from_list([1], path='../../../tg2/', header='INS_Taylor_Green_hdf5_chk_', form='chk')
+DATA = SimulationData.from_list([1], path='../../../', header='INS_LidDr_Cavity_hdf5_chk_', form='chk')
 VISUAL = SimulationPlot(DATA)
-VISUAL.plot(axis='z', cut=0.5, field='pres')
+VISUAL.plot(axis='z', cut=0.5, field='fcx2')
+#VISUAL.plot(axis='z', cut=0.5, field='fcx2', line='y', cutlines=[0.25,0.5,0.75])
+#VISUAL.plot(field='fcx2', line='x', cutlines=[0.25,0.5,0.75])
 VISUAL.show()
 
 # Introduce Noise into sim
