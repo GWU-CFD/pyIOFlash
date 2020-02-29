@@ -24,4 +24,4 @@ class bubbleprops(object):
 
 
     def _get_bubbleprops(data):
-        self.bubbleprops # = function(self.data.fields['dfun'][tindex,blockindex,:,:,:])
+        self.bubbleprops # = function(data.fields['dfun'][tindex,blockindex,:,:,:])
