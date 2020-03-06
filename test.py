@@ -32,23 +32,97 @@ U_S7 = [0.00, -19.00, -77.00, -78.00, -75.00, -69.00, -56.00, -42.00, -26.00, -1
 SCALE = 19/0.1
 
 # Comparision to Experiment
-#DATA = SimulationData.from_list([2], path='../../../qual2/', header='INS_Rayleigh_Benard_hdf5_chk_', form='chk')
+#DATA = SimulationData.from_list([3, 4], path='../../../rb3_1e5_2/',
+#                                header='INS_Rayleigh_Benard_hdf5_chk_', form='chk')
 #VISUAL = SimulationPlot(DATA, fig_options={'title': f'Rayleigh Benard Convection'})
-#VISUAL.plot(axis='x', cut=0.5, field='temp')
-#FIG1, AX1 = VISUAL.plot(axis='x', cut=0.5, field='fcz2', line='z', cutlines=[0.5], scale=SCALE)
+#VISUAL.plot(axis='x', cut=0.5, field='temp', time=0)
+#FIG1, AX1 = VISUAL.plot(axis='x', cut=0.5, field='fcz2', time=1, line='z', cutlines=[0.5], scale=SCALE)
 #AX1.plot(x[::-1], W_S2, '.b')
 #AX1.plot(x[::-1], W_S1, '.r')
 #AX1.plot(x[::-1], W_S7, '.g')
-#FIG2, AX2 = VISUAL.plot(axis='x', cut=0.5, field='fcy2', line='y', cutlines=[0.5], scale=SCALE)
+#FIG2, AX2 = VISUAL.plot(axis='x', cut=0.5, field='fcy2', time=1, line='y', cutlines=[0.5], scale=SCALE)
 #AX2.plot(z[::-1], U_S2, '.b')
 #AX2.plot(z[::-1], U_S1, '.r')
 #AX2.plot(z[::-1], U_S7, '.g')
 #VISUAL.show()
 
 # Visualize Code Output
-#DATA = SimulationData.from_list([681], path='../../../amr/', header='INS_LidDr_Cavity_hdf5_plt_cnt_')
+#DATA = SimulationData.from_list([600], path='../../../amr/', header='INS_LidDr_Cavity_hdf5_plt_cnt_')
 #DATA = SimulationData.from_list(range(5), path='../../../qual2/', header='INS_Rayleigh_Benard_hdf5_plt_cnt_')
-DATA = SimulationData.from_list([1], path='../../../rb3_1e/', header='INS_Rayleigh_Benard_hdf5_plt_cnt_')
+#DATA = SimulationData.from_list([2], path='../../../qual2/', header='INS_Rayleigh_Benard_hdf5_chk_', form='chk')
+#DATA = SimulationData.from_list([1], path='../../../tg2/', header='INS_Taylor_Green_hdf5_chk_', form='chk')
+DATA = SimulationData.from_list([1], path='../../../', header='INS_LidDr_Cavity_hdf5_chk_', form='chk')
 VISUAL = SimulationPlot(DATA)
-VISUAL.plot(axis='x', cut=0.5, field='temp')
+VISUAL.plot(axis='z', cut=0.5, field='fcx2')
+#VISUAL.plot(axis='z', cut=0.5, field='fcx2', line='y', cutlines=[0.25,0.5,0.75])
+#VISUAL.plot(field='fcx2', line='x', cutlines=[0.25,0.5,0.75])
 VISUAL.show()
+
+# Introduce Noise into sim
+#DATA = SimulationData.from_list([0, 10, 19], path='../../../rb3_1e5_2/',
+#                                header='INS_Rayleigh_Benard_hdf5_plt_cnt_')
+#VISUAL = SimulationPlot(DATA)
+#for i in range(3):
+#    VISUAL.plot(axis='z', cut=0.5, field='temp', time=i)
+#VISUAL.show()
+
+# Nussult Number Plots
+#from matplotlib import pyplot
+#import numpy
+#data = SimulationData.from_list(list(range(0, 139, 10)), path='../../../rb3_1e5_2/',
+#                                header='INS_Rayleigh_Benard_hdf5_plt_cnt_', form='plt')
+#time = list(data.scalars['t'])[0]
+#Nu = [[numpy.sum(data.fields['temp'][i, :, j, :, :][0] - data.fields['temp'][i, :, j - 1, :, :][0]) * (1 / 72)
+#      for i in range(14)] for j in (18, 36, 54)]
+
+#for lbl, clr, nu in zip(['z = 0.25', 'z = 0.5', 'z = 0.75'], ['b', 'r', 'g'], Nu):
+#    pyplot.plot(time, nu, clr, label=lbl)
+#pyplot.xlabel('Time [s]')
+#pyplot.ylabel('Nu / Ra^1/3 [-]')
+#pyplot.show()
+
+# energy equation balance
+#data = SimulationData.from_list([11], path='../../../rb3_1e5_2/',
+#                                header='INS_Rayleigh_Benard_hdf5_chk_', form='chk')
+
+#T = list(data.fields['temp'][-1])[0]
+#u = list(data.fields['fcx2'][-1])[0]
+#v = list(data.fields['fcy2'][-1])[0]
+#w = list(data.fields['fcz2'][-1])[0]
+#_T = list(data.fields['_temp'][-1])[0]
+#_u = list(data.fields['_fcx2'][-1])[0]
+#_v = list(data.fields['_fcy2'][-1])[0]
+#_w = list(data.fields['_fcz2'][-1])[0]
+#X = list(data.geometry['grd_mesh_x'][-1])[0]
+#Y = list(data.geometry['grd_mesh_y'][-1])[0]
+#Z = list(data.geometry['grd_mesh_z'][-1])[0]
+
+#dx = 1 / 72
+#dy = 1 / 72
+#dz = 1 / 72
+#adv = (u[:, 36, :, :-1] * (_T[:, 36, :-1, 1:] - _T[:, 36, :-1, :-1]) / dx +
+#       v[:, 36, :-1, :] * (_T[:, 36, 1:, :-1] - _T[:, 36, :-1, :-1]) / dy +
+#       w[:, 36, :, :]   * ( T[:, 36, :, :]    -  T[:, 35, :, :]) / dz)
+
+#diff = ((_T[:, 36, 1:-1, 2:]   - 2 * _T[:, 36, 1:-1, 1:-1] + _T[:, 36, 1:-1, :-2])  / dx**2 +
+#        (_T[:, 36, 2:, 1:-1]   - 2 * _T[:, 36, 1:-1, 1:-1] + _T[:, 36, :-2, 1:-1])  / dy**2 +
+#        (_T[:, 37, 1:-1, 1:-1] - 2 * _T[:, 36, 1:-1, 1:-1] + _T[:, 35, 1:-1, 1:-1]) / dz**2) * (1/1e7)**0.5
+
+#fig = pyplot.figure()
+
+#ax1 = fig.add_subplot(1, 2, 1)
+#for i in range(36):
+#    c1 = ax1.contour(X[i, 36, :, :], Y[i, 36, :, :], adv[i], 30, vmin=-0.03, vmax=0.03)
+#ax1.set_xlim(0, 1)
+#ax1.set_ylim(0, 1)
+#ax1.set_title('Advective term')
+
+#ax2 = fig.add_subplot(1, 2, 2)
+#for i in range(36):
+#    c2 = ax2.contour(X[i, 36, 1:, 1:], Y[i, 36, 1:, 1:], diff[i], 30, vmin=-0.03, vmax=0.03)
+#ax2.set_xlim(0, 1)
+#ax2.set_ylim(0, 1)
+#ax2.set_title('Diffusive term')
+
+#fig.suptitle('Temperature Equation terms @ z=0.5 plane')
+#pyplot.show()

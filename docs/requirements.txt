@@ -1,0 +1,4 @@
+sphinx-autodoc-typehints
+h5py
+matplotlib
+numpy

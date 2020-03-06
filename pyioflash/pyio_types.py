@@ -42,7 +42,7 @@ class _BaseData(AbstractBase):
     read the hdf5 output file data.
 
     Attributes:
-        _key: mappable for compositting into a sortable collection object; sorted by
+        key: mappable for compositting into a sortable collection object; sorted by
         _attributes: list of named attributes loaded from file
         file: (InitVar) h5py file object
         form: (InitVar) the expected file format or data layout
@@ -178,15 +178,16 @@ class GeometryData(_BaseData):
 
     @staticmethod
     def _get_neighbors(blocks, blk_tree_str, directions):
+        # does not work for paramesh
         nbr_inflg = -1
         neighbors = []
         for direct in directions:
             if blocks[direct] >= 0:
                 neighbors.append((0, blocks[direct]))
             elif blocks[direct] == nbr_inflg:
-                neighbors.append((1, blk_tree_str[blocks[4]][direct]))
+                neighbors.append((2, blk_tree_str[blocks[4]][direct])) # only 2D?
             else:
-                neighbors.append((2, blocks[direct]))
+                neighbors.append((1, blocks[direct]))
         return neighbors
 
     def _init_process(self, file, code, form) -> None: # pylint: disable=arguments-differ
@@ -271,20 +272,25 @@ class GeometryData(_BaseData):
                                                           range(int(2 * self.grd_dim)))
                               for blocks in self.blk_tree_str]
 
-        # intialize mesh grids for cell centered fields
-        self._grd_mesh_x = numpy.ndarray((self.blk_num, self.blk_size_z + 1,
-                                          self.blk_size_y + 1, self.blk_size_x + 1), dtype=numpy.dtype(float))
-        self._grd_mesh_y = numpy.ndarray((self.blk_num, self.blk_size_z + 1,
-                                          self.blk_size_y + 1, self.blk_size_x + 1), dtype=numpy.dtype(float))
-        self._grd_mesh_z = numpy.ndarray((self.blk_num, self.blk_size_z + 1,
-                                          self.blk_size_y + 1, self.blk_size_x + 1), dtype=numpy.dtype(float))
+        # intialize mesh grids for cell centered fields (guard data in both directions per axis)
+        self._grd_mesh_x = numpy.ndarray((self.blk_num, self.blk_size_z + 2,
+                                          self.blk_size_y + 2, self.blk_size_x + 2), dtype=numpy.dtype(float))
+        self._grd_mesh_y = numpy.ndarray((self.blk_num, self.blk_size_z + 2,
+                                          self.blk_size_y + 2, self.blk_size_x + 2), dtype=numpy.dtype(float))
+        self._grd_mesh_z = numpy.ndarray((self.blk_num, self.blk_size_z + 2,
+                                          self.blk_size_y + 2, self.blk_size_x + 2), dtype=numpy.dtype(float))
 
         for block in range(self.blk_num):
             bndbox = self.blk_bndbox[block]
             sz_box = (self.blk_size_x, self.blk_size_y, self.blk_size_z)
-            x = numpy.linspace(bndbox[0][0], bndbox[0][1], sz_box[0] + 1, True)
-            y = numpy.linspace(bndbox[1][0], bndbox[1][1], sz_box[1] + 1, True)
-            z = numpy.linspace(bndbox[2][0], bndbox[2][1], sz_box[2] + 1, True)
+
+            dx = (bndbox[0][1] - bndbox[0][0]) / sz_box[0]
+            dy = (bndbox[1][1] - bndbox[1][0]) / sz_box[1]
+            dz = (bndbox[2][1] - bndbox[2][0]) / sz_box[2]
+
+            x = numpy.linspace(bndbox[0][0] - dx/2, bndbox[0][1] + dx/2, sz_box[0] + 2, True)
+            y = numpy.linspace(bndbox[1][0] - dy/2, bndbox[1][1] + dy/2, sz_box[1] + 2, True)
+            z = numpy.linspace(bndbox[2][0] - dz/2, bndbox[2][1] + dz/2, sz_box[2] + 2, True)
 
             Z, Y, X = numpy.meshgrid(z, y, x, indexing='ij')
             self._grd_mesh_x[block, :, :, :] = X
@@ -317,11 +323,11 @@ class GeometryData(_BaseData):
         Returns:
             Mesh data for block data, in x direction (at current timestep)
         """
-        return self._grd_mesh_x[:, :-1, :-1, :-1]
+        return self._grd_mesh_x[:, 1:-1, 1:-1, 1:-1]
 
     @grd_mesh_x.setter
     def grd_mesh_x(self, value):
-        self._grd_mesh_x[:, :-1, :-1, :-1] = value
+        self._grd_mesh_x[:, 1:-1, 1:-1, 1:-1] = value
 
     @property
     def grd_mesh_y(self):
@@ -331,11 +337,11 @@ class GeometryData(_BaseData):
         Returns:
             Mesh data for block data, in y direction (at current timestep)
         """
-        return self._grd_mesh_y[:, :-1, :-1, :-1]
+        return self._grd_mesh_y[:, 1:-1, 1:-1, 1:-1]
 
     @grd_mesh_y.setter
     def grd_mesh_y(self, value):
-        self._grd_mesh_y[:, :-1, :-1, :-1] = value
+        self._grd_mesh_y[:, 1:-1, 1:-1, 1:-1] = value
 
     @property
     def grd_mesh_z(self):
@@ -345,11 +351,11 @@ class GeometryData(_BaseData):
         Returns:
             Mesh data for block data, in z direction (at current timestep)
         """
-        return self._grd_mesh_z[:, :-1, :-1, :-1]
+        return self._grd_mesh_z[:, 1:-1, 1:-1, 1:-1]
 
     @grd_mesh_z.setter
     def grd_mesh_z(self, value):
-        self._grd_mesh_z[:, :-1, :-1, :-1] = value
+        self._grd_mesh_z[:, 1:-1, 1:-1, 1:-1] = value
 
 @dataclass
 class FieldData(_BaseData):
@@ -376,23 +382,58 @@ class FieldData(_BaseData):
 
     @staticmethod
     def _fill_guard_data(data, geometry):
+        # does not work for refined grids
         map_dir = {'x': lambda block, index: numpy.index_exp[block, :, :, index],
                    'y': lambda block, index: numpy.index_exp[block, :, index, :],
-                   'z': lambda block, index: numpy.index_exp[block, index, :, :]}
+                   'z': lambda block, index: numpy.index_exp[block, index, :, :],
+                   'xy': lambda block, i, j: numpy.index_exp[block, :, j, i],
+                   'xyz': lambda block, i, j, k: numpy.index_exp[block, k, j, i]}
 
-        map_type = {0: lambda data, _, guard, dir: data[map_dir[dir](guard, 0)],
-                    1: lambda data, block, _, dir: data[map_dir[dir](block, -2)] * 0.0 - 10.0,
-                    2: lambda data, block, _, dir: data[map_dir[dir](block, -2)]}
-        y_fix = 2 if geometry.grd_type == 'uniform' else 3
+        map_type = {10: lambda data, _, guard, dir: data[map_dir[dir](guard, -2)],
+                    11: lambda data, block, _, dir: data[map_dir[dir](block, 1)],
+                    12: lambda data, block, _, dir: data[map_dir[dir](block, 1)] * 0.0,
+                    20: lambda data, _, guard, dir: data[map_dir[dir](guard, 1)],
+                    21: lambda data, block, _, dir: data[map_dir[dir](block, -2)],
+                    22: lambda data, block, _, dir: data[map_dir[dir](block, 1)] * 0.0,
+                    30: lambda data, _, guard, dir, i, j, __, ___: data[map_dir[dir](guard, i, j)],
+                    31: lambda data, block, _, dir, __, ___, i, j: data[map_dir[dir](block, i, j)],
+                    32: lambda data, block, _, dir, __, ___, i, j: data[map_dir[dir](block, i, j)] * 0.0
+                    }
+        y_up = 2 if geometry.grd_type == 'uniform' else 3
+        y_dn = 3 if geometry.grd_type == 'uniform' else 2
 
-        for block, neighbors in enumerate(geometry.blk_neighbors):
-            data[block, :, :, -1] = map_type[neighbors[1][0]](data, block, neighbors[1][1], 'x')
-            data[block, :, -1, :] = map_type[neighbors[y_fix][0]](data, block, neighbors[y_fix][1], 'y')
+        blk_nbrs = geometry.blk_neighbors
+        for block, neighbors in enumerate(blk_nbrs):
+            # x-direction (left, right)
+            data[block, :, :, 0] = map_type[10 + neighbors[0][0]](data, block, neighbors[0][1], 'x')
+            data[block, :, :, -1] = map_type[20 + neighbors[1][0]](data, block, neighbors[1][1], 'x')
+
+            # y-direction (for, aft)
+            data[block, :, 0, :] = map_type[10 + neighbors[y_dn][0]](data, block, neighbors[y_dn][1], 'y')
+            data[block, :, -1, :] = map_type[20 + neighbors[y_up][0]](data, block, neighbors[y_up][1], 'y')
+
+            # xy-direction (left for/aft, right for/aft)
+            data[block, :, 0, 0] = map_type[30 + max(neighbors[0][0], neighbors[y_dn][0])](data, block,
+                blk_nbrs[max(0, neighbors[0][1])][y_dn][1], 'xy', -2, -2, 1, -2)
+            data[block, :, -1, 0] = map_type[30 + max(neighbors[0][0], neighbors[y_up][0])](data, block,
+                blk_nbrs[max(0, neighbors[0][1])][y_up][1], 'xy', -2, 1, 1, 1)
+            data[block, :, 0, -1] = map_type[30 + max(neighbors[1][0], neighbors[y_dn][0])](data, block,
+                blk_nbrs[max(0, neighbors[1][1])][y_dn][1], 'xy', 1, -2, -2, -2)
+            data[block, :, -1, -1] = map_type[30 + max(neighbors[1][0], neighbors[y_up][0])](data, block,
+                blk_nbrs[max(0, neighbors[1][1])][y_up][1], 'xy', 1, 1, -2, 1)
+
             if geometry.grd_dim == 3:
-                data[block, -1, :, :] = map_type[neighbors[5][0]](data, block, neighbors[5][1], 'z')
+                # z-direction (bot, top)
+                data[block, 0, :, :] = map_type[10 + neighbors[4][0]](data, block, neighbors[4][1], 'z')
+                data[block, -1, :, :] = map_type[20 + neighbors[5][0]](data, block, neighbors[5][1], 'z')
 
     # pylint: disable=arguments-differ
     def _init_process(self, file: h5py.File, code: str, form: str, geometry: GeometryData) -> None:
+        vel_grp = {'fcx2', 'fcy2', 'fcz2'}
+        vel_map = {'fcx2' : [2, 2, 1],
+                   'fcy2' : [2, 1, 2],
+                   'fcz2' : [1, 2, 2]}
+
         # pull relavent data from hdf5 file object
         real_scalars: List[Tuple[bytes, float]] = list(file['real scalars'])
         unknown_names: List[bytes] = list(file['unknown names'][:, 0])
@@ -417,28 +458,40 @@ class FieldData(_BaseData):
 
             # allow for guard data at axis upper extent
             shape = file[group].shape
-            shape = tuple([shape[0]]) + tuple([length + 1 for length in shape[1:]])
+            if group not in {'fcx2', 'fcy2', 'fcz2'}:
+                shape = tuple([shape[0]]) + tuple([length + 2 for length in shape[1:]])
+            else:
+                shape = tuple([shape[0]]) + tuple([length +
+                                                   vel_map[group][i] for i, length in enumerate(shape[1:])])
 
             # read dataset from file
             data = numpy.ndarray(shape, dtype=numpy.dtype(float))
-            data[:, :-1, :-1, :-1] = file[group][()]
+            if group not in vel_grp:
+                data[:, 1:-1, 1:-1, 1:-1] = file[group][()]
+            elif group == 'fcx2':
+                data[:, 1:-1, 1:-1, :-1] = file[group][()]
+            elif group == 'fcy2':
+                data[:, 1:-1, :-1, 1:-1] = file[group][()]
+            elif group == 'fcz2':
+                data[:, :-1, 1:-1, 1:-1] = file[group][()]
+            else:
+                raise Exception(f'requested field not found!')
 
             # fill guard data (twice to ensure corners are valid)
-            FieldData._fill_guard_data(data, geometry)
             FieldData._fill_guard_data(data, geometry)
 
             # attach dataset to FieldData instance
             setattr(self, '_' + group, data)
-            setattr(FieldData, group, property(partial(self._get_attr, attr='_' + group),
-                                               partial(self._set_attr, attr='_' + group)))
+            setattr(FieldData, group, property(partial(FieldData._get_attr, attr='_' + group),
+                                               partial(FieldData._set_attr, attr='_' + group)))
 
         # initialize list of class member names holding the data
         setattr(self, '_attributes', {group for group in self._groups})
 
-    def _set_attr(self, _, value, attr):
+    def _set_attr(self, value, attr):
         getattr(self, attr)[:, :-1, :-1, :-1] = value
 
-    def _get_attr(self, _, attr):
+    def _get_attr(self, attr):
         return getattr(self, attr)[:, :-1, :-1, :-1]
 
 @dataclass
