@@ -31,7 +31,7 @@ from typing import Any, Tuple, List, Dict, Iterable, Union
 
 import numpy
 
-from .pyio_utility import _filter_transpose, _first_true, _set_is_unique
+from pyioflash.simulation.utility import _filter_transpose, _first_true, _set_is_unique
 
 class SortedDict:
     """

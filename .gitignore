@@ -2,9 +2,16 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-
+# Visual Studio Files
 *.pyproj
 *.user
-/pyioflash/__pycache__
+*.sln
 /.vs
+
+# Documentation Files (Sphynx)
 /docs/_build
+
+# Binary and Build Files
+*.egg-info
+/pyioflash/__pycache__
+/pyioflash/*/__pycache__

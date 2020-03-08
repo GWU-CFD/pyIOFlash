@@ -6,10 +6,10 @@ store simulation output, allowing for convienent and intuitive post-processing a
 
 from typing import Any, Tuple, List, Dict, Callable
 
-from .pyio_utility import _reduce_str
-from .pyio_utility import open_hdf5, NameData
-from .pyio_collections import SortedDict, TransposableAsArray, TransposableAsSingle
-from .pyio_types import GeometryData, FieldData, ScalarData, StaticData
+from pyioflash.simulation.series import NameData
+from pyioflash.simulation.utility import _reduce_str, open_hdf5
+from pyioflash.simulation.collections import SortedDict, TransposableAsArray, TransposableAsSingle
+from pyioflash.simulation.types import GeometryData, FieldData, ScalarData, StaticData
 
 
 class SimulationData:

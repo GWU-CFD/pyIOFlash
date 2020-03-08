@@ -32,7 +32,7 @@ from functools import partial
 import numpy
 import h5py
 
-from .pyio_utility import _first_true, _reduce_str
+from pyioflash.simulation.utility import _first_true, _reduce_str
 
 @dataclass(order=True)
 class _BaseData(AbstractBase):
@@ -208,6 +208,8 @@ class GeometryData(_BaseData):
         # initialize grid type
         setup_call: str = _first_true(sim_info, lambda l: l[0] == 9)[1].decode('utf-8')
         if setup_call.find('+ug') != -1:
+            self.grd_type = 'uniform'
+        elif setup_call.find('+rg') != -1:
             self.grd_type = 'uniform'
         elif setup_call.find('+pm4dev') != -1:
             self.grd_type = 'paramesh'
