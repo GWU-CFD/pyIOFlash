@@ -11,3 +11,10 @@ from pyioflash.simulation import NameData
 from pyioflash.visual import SimulationPlot
 from pyioflash.visual import FigureOptions, PlotOptions, AnimationOptions
 from pyioflash.visual import Plane
+
+# Used to post-process simulation data
+
+
+# Used to generate and pre-process simulation data
+
+
