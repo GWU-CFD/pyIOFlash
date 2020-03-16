@@ -7,7 +7,7 @@ Todo:
 """
 
 from dataclasses import dataclass, field
-from typing import Any, List, Iterable, Callable, Union
+from typing import List, Iterable, Union
 
 Namelist = Iterable[Union[int, str]]
 
@@ -32,7 +32,7 @@ class NameData:
 
             - numbers = [0, 1, 2]
             - directory = '../out/'
-            - header = 'INS_LidDr_Cavity_hdf5_plt_cnt\_'
+            - header = 'INS_LidDr_Cavity_hdf5_plt_cnt_'
             - footer = ''
             - extension = ''
             - numform = '04d'
@@ -93,4 +93,3 @@ class NameData:
 
         """
         return cls.from_strings([name], **kwargs)
-

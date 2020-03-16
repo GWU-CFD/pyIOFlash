@@ -415,14 +415,10 @@ class FieldData(_BaseData):
             data[block, :, -1, :] = map_type[20 + neighbors[y_up][0]](data, block, neighbors[y_up][1], 'y')
 
             # xy-direction (left for/aft, right for/aft)
-            data[block, :, 0, 0] = map_type[30 + max(neighbors[0][0], neighbors[y_dn][0])](data, block,
-                blk_nbrs[max(0, neighbors[0][1])][y_dn][1], 'xy', -2, -2, 1, -2)
-            data[block, :, -1, 0] = map_type[30 + max(neighbors[0][0], neighbors[y_up][0])](data, block,
-                blk_nbrs[max(0, neighbors[0][1])][y_up][1], 'xy', -2, 1, 1, 1)
-            data[block, :, 0, -1] = map_type[30 + max(neighbors[1][0], neighbors[y_dn][0])](data, block,
-                blk_nbrs[max(0, neighbors[1][1])][y_dn][1], 'xy', 1, -2, -2, -2)
-            data[block, :, -1, -1] = map_type[30 + max(neighbors[1][0], neighbors[y_up][0])](data, block,
-                blk_nbrs[max(0, neighbors[1][1])][y_up][1], 'xy', 1, 1, -2, 1)
+            data[block, :, 0, 0] = map_type[30 + max(neighbors[0][0], neighbors[y_dn][0])](data, block, blk_nbrs[max(0, neighbors[0][1])][y_dn][1], 'xy', -2, -2, 1, -2)
+            data[block, :, -1, 0] = map_type[30 + max(neighbors[0][0], neighbors[y_up][0])](data, block, blk_nbrs[max(0, neighbors[0][1])][y_up][1], 'xy', -2, 1, 1, 1)
+            data[block, :, 0, -1] = map_type[30 + max(neighbors[1][0], neighbors[y_dn][0])](data, block, blk_nbrs[max(0, neighbors[1][1])][y_dn][1], 'xy', 1, -2, -2, -2)
+            data[block, :, -1, -1] = map_type[30 + max(neighbors[1][0], neighbors[y_up][0])](data, block, blk_nbrs[max(0, neighbors[1][1])][y_up][1], 'xy', 1, 1, -2, 1)
 
             if geometry.grd_dim == 3:
                 # z-direction (bot, top)

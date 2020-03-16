@@ -7,8 +7,7 @@ Todo:
 """
 
 from contextlib import contextmanager
-from dataclasses import dataclass, field
-from typing import Any, List, Iterable, Callable, Union
+from typing import Any, List, Iterable, Callable
 
 import h5py
 
