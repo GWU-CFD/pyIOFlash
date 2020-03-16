@@ -22,6 +22,9 @@ the hdf5 output files catagorically:
 Todo:
     * Provide more correct and higher performance guard data filling
     * Provide differed or Just-In-Time block data loading for large simulations
+    * Handle variable number of GuardCells
+
+
 """
 
 from abc import ABC as AbstractBase, abstractmethod
@@ -159,10 +162,7 @@ class GeometryData(_BaseData):
     blk_coords: numpy.ndarray = field(repr=False, init=False, compare=False)
     blk_bndbox: numpy.ndarray = field(repr=False, init=False, compare=False)
     blk_tree_str: List[List[int]] = field(repr=False, init=False, compare=False)
-    blk_filtered: List[List[int]] = field(repr=False, init=False, compare=False)
-    blk_refine: List[List[int]] = field(repr=False, init=False, compare=False)
     blk_neighbors: List[Tuple[int, List[int]]] = field(repr=False, init=False, compare=False)
-
     grd_type: str = field(repr=True, init=False, compare=False)
     grd_dim: int = field(repr=True, init=False, compare=False)
     grd_bndbox: List[Tuple[float, float]] = field(repr=False, init=False, compare=False)
@@ -171,14 +171,7 @@ class GeometryData(_BaseData):
     _grd_mesh_z: numpy.ndarray = field(repr=False, init=False, compare=False)
 
     @staticmethod
-    def _get_filtered_blocks(blk_tree_str, refine, level=None):
-        level = max(refine) if level is None else (min(refine) + 1 if level < 0 else level)
-        return [(id, blocks) for id, blocks in enumerate(blk_tree_str) if
-                refine[id] == level or (sum(blocks[-4:]) == -4 and refine[id] < level)]
-
-    @staticmethod
     def _get_neighbors(blocks, blk_tree_str, directions):
-        # does not work for paramesh
         nbr_inflg = -1
         neighbors = []
         for direct in directions:
@@ -210,9 +203,9 @@ class GeometryData(_BaseData):
         if setup_call.find('+ug') != -1:
             self.grd_type = 'uniform'
         elif setup_call.find('+rg') != -1:
-            self.grd_type = 'uniform'
+            self.grd_type = 'regular'
         elif setup_call.find('+pm4dev') != -1:
-            self.grd_type = 'paramesh'
+            raise Exception(f'Paramesh grid type not currently supported')
         else:
             raise Exception(f'Unable to determine grid type from sim info field')
 
@@ -228,23 +221,17 @@ class GeometryData(_BaseData):
                             _first_true(real_runtime, lambda l: 'zmax' in str(l[0]))[1])]
 
         # initialize block data
-        if self.grd_type == 'uniform':
+        if self.grd_type == 'uniform' or self.grd_type == 'regular':
             self.blk_num = _first_true(int_scalars, lambda l: 'globalnumblocks' in str(l[0]))[1]
             self.blk_num_x = _first_true(int_runtime, lambda l: 'iprocs' in str(l[0]))[1]
             self.blk_num_y = _first_true(int_runtime, lambda l: 'jprocs' in str(l[0]))[1]
-            self.blk_num_z = 1
+            self.blk_num_z = _first_true(int_runtime, lambda l: 'kprocs' in str(l[0]))[1] 
             self.blk_size_x = _first_true(int_scalars, lambda l: 'nxb' in str(l[0]))[1]
             self.blk_size_y = _first_true(int_scalars, lambda l: 'nyb' in str(l[0]))[1]
             self.blk_size_z = _first_true(int_scalars, lambda l: 'nzb' in str(l[0]))[1]
 
         elif self.grd_type == 'paramesh':
-            self.blk_num = _first_true(int_scalars, lambda l: 'globalnumblocks' in str(l[0]))[1]
-            self.blk_num_x = _first_true(int_runtime, lambda l: 'nblockx' in str(l[0]))[1]
-            self.blk_num_y = _first_true(int_runtime, lambda l: 'nblocky' in str(l[0]))[1]
-            self.blk_num_z = _first_true(int_runtime, lambda l: 'nblockz' in str(l[0]))[1]
-            self.blk_size_x = _first_true(int_scalars, lambda l: 'nxb' in str(l[0]))[1]
-            self.blk_size_y = _first_true(int_scalars, lambda l: 'nyb' in str(l[0]))[1]
-            self.blk_size_z = _first_true(int_scalars, lambda l: 'nzb' in str(l[0]))[1]
+            pass # paramesh grid handling operations
 
         else:
             pass # other grid handling operations
@@ -258,13 +245,11 @@ class GeometryData(_BaseData):
         self.blk_bndbox[:, :, :] = boundingbox
 
         # initialize tree structure and filter a max refinement level
-        if self.grd_type == 'uniform':
+        if self.grd_type == 'uniform' or self.grd_type == 'regular':
             self.blk_tree_str = tree_struct.copy()
-            self.blk_filtered = GeometryData._get_filtered_blocks(tree_struct, refine_lvls)
 
         elif self.grd_type == 'paramesh':
-            self.blk_tree_str = [GeometryData._shift_block_ids(blocks, -1) for blocks in tree_struct]
-            self.blk_filtered = GeometryData._get_filtered_blocks(tree_struct, refine_lvls, -1)
+            pass # paramesh grid handling operations
 
         else:
             pass # other grid handling operations
@@ -274,7 +259,7 @@ class GeometryData(_BaseData):
                                                           range(int(2 * self.grd_dim)))
                               for blocks in self.blk_tree_str]
 
-        # intialize mesh grids for cell centered fields (guard data in both directions per axis)
+        # create mesh grids for cell centered fields (guard data in both directions per axis)
         self._grd_mesh_x = numpy.ndarray((self.blk_num, self.blk_size_z + 2,
                                           self.blk_size_y + 2, self.blk_size_x + 2), dtype=numpy.dtype(float))
         self._grd_mesh_y = numpy.ndarray((self.blk_num, self.blk_size_z + 2,
@@ -282,22 +267,37 @@ class GeometryData(_BaseData):
         self._grd_mesh_z = numpy.ndarray((self.blk_num, self.blk_size_z + 2,
                                           self.blk_size_y + 2, self.blk_size_x + 2), dtype=numpy.dtype(float))
 
-        for block in range(self.blk_num):
-            bndbox = self.blk_bndbox[block]
-            sz_box = (self.blk_size_x, self.blk_size_y, self.blk_size_z)
+        # initialize mesh grids for cell centered fields
+        if self.grd_type == 'uniform':
+            for block in range(self.blk_num):
+                bndbox = self.blk_bndbox[block]
+                sz_box = (self.blk_size_x, self.blk_size_y, self.blk_size_z)
 
-            dx = (bndbox[0][1] - bndbox[0][0]) / sz_box[0]
-            dy = (bndbox[1][1] - bndbox[1][0]) / sz_box[1]
-            dz = (bndbox[2][1] - bndbox[2][0]) / sz_box[2]
+                dx = (bndbox[0][1] - bndbox[0][0]) / sz_box[0]
+                dy = (bndbox[1][1] - bndbox[1][0]) / sz_box[1]
+                dz = (bndbox[2][1] - bndbox[2][0]) / sz_box[2]
 
-            x = numpy.linspace(bndbox[0][0] - dx/2, bndbox[0][1] + dx/2, sz_box[0] + 2, True)
-            y = numpy.linspace(bndbox[1][0] - dy/2, bndbox[1][1] + dy/2, sz_box[1] + 2, True)
-            z = numpy.linspace(bndbox[2][0] - dz/2, bndbox[2][1] + dz/2, sz_box[2] + 2, True)
+                x = numpy.linspace(bndbox[0][0] - dx/2, bndbox[0][1] + dx/2, sz_box[0] + 2, True)
+                y = numpy.linspace(bndbox[1][0] - dy/2, bndbox[1][1] + dy/2, sz_box[1] + 2, True)
+                z = numpy.linspace(bndbox[2][0] - dz/2, bndbox[2][1] + dz/2, sz_box[2] + 2, True)
 
-            Z, Y, X = numpy.meshgrid(z, y, x, indexing='ij')
-            self._grd_mesh_x[block, :, :, :] = X
-            self._grd_mesh_y[block, :, :, :] = Y
-            self._grd_mesh_z[block, :, :, :] = Z
+                Z, Y, X = numpy.meshgrid(z, y, x, indexing='ij')
+                self._grd_mesh_x[block, :, :, :] = X
+                self._grd_mesh_y[block, :, :, :] = Y
+                self._grd_mesh_z[block, :, :, :] = Z
+
+
+        elif self.grd_type == 'regular':
+            pass # handle generating regular grid points -- from file
+
+
+	#elif self.grd_type == 'paramesh':
+        #    pass # handle generating paramesh grid points
+
+   
+        else:
+            pass # other mesh grid handling operations
+
 
         # initialize list of class member names holding the data
         setattr(self, '_attributes', {
