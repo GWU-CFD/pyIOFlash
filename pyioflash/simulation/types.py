@@ -34,7 +34,7 @@ from functools import partial
 import numpy
 import h5py
 
-from pyioflash.simulation.utility import _first_true, _reduce_str
+from pyioflash.simulation.utility import _first_true, _reduce_str, open_hdf5
 from pyioflash.simulation.utility import _guard_cells_from_data, _bound_cells_from_data
 
 @dataclass(order=True)
@@ -153,6 +153,7 @@ class GeometryData(_BaseData):
         without filling in relavent guard cell neighbor data; if this data is
         desired, the attribute name should be prepended with an underscore.
     """
+    gridfilename: InitVar[str]
     blk_num: int = field(repr=False, init=False, compare=False)
     blk_num_x: int = field(repr=True, init=False, compare=False)
     blk_num_y: int = field(repr=True, init=False, compare=False)
@@ -182,7 +183,7 @@ class GeometryData(_BaseData):
                 for struct in tree]
 
     # pylint: disable=arguments-differ
-    def _init_process(self, file, code, form) -> None:
+    def _init_process(self, file: h5py.File, code: str, form: str, gridfilename: str) -> None:
 
         # pull relavent data from hdf5 file object  
         sim_info: List[Tuple[int, bytes]] = list(file['sim info'])
@@ -227,11 +228,12 @@ class GeometryData(_BaseData):
                    "temp" : {"left"  : "txl_boundary_type", "right" : "txr_boundary_type",
                              "front" : "tyr_boundary_type", "back"  : "tyl_boundary_type",
                              "up"    : "tzr_boundary_type", "down"  : "tzl_boundary_type"}}
-        bndvals = {"tval" : {"left"  : "txl_boundary_value", "right" : "txr_boundary_value",
+        bndvals = {"temp" : {"left"  : "txl_boundary_value", "right" : "txr_boundary_value",
                              "front" : "tyr_boundary_value", "back"  : "tyl_boundary_value",
                              "up"    : "tzr_boundary_value", "down"  : "tzl_boundary_value"}}
         self.grd_bndcnds = {field : {
-            face : _first_true(str_runtime, lambda l: name == l[0].decode('utf-8').replace(' ',''))[1].decode('utf-8') 
+            face : _first_true(str_runtime, lambda l: name == l[0].decode('utf-8').replace(' ','')
+                               )[1].decode('utf-8').replace(' ','') 
             for face, name in faces.items()} for field, faces in bndcnds.items()}
         self.grd_bndvals = {field : {
             face : _first_true(real_runtime, lambda l: name == l[0].decode('utf-8').replace(' ',''))[1] 
@@ -279,15 +281,15 @@ class GeometryData(_BaseData):
         self.blk_neighbors = GeometryData._get_neighbors(self.blk_tree_str, self.grd_dim)
 
         # create mesh grids for cell centered fields (guard data in both directions per axis)
-        self._grd_mesh_x = numpy.ndarray((self.blk_num, 
+        self._grd_mesh_x = numpy.ndarray((3, self.blk_num, 
                                           self.blk_size_z + self.blk_guards,
                                           self.blk_size_y + self.blk_guards, 
                                           self.blk_size_x + self.blk_guards), dtype=numpy.dtype(float))
-        self._grd_mesh_y = numpy.ndarray((self.blk_num, 
+        self._grd_mesh_y = numpy.ndarray((3, self.blk_num, 
                                           self.blk_size_z + self.blk_guards,
                                           self.blk_size_y + self.blk_guards, 
                                           self.blk_size_x + self.blk_guards), dtype=numpy.dtype(float))
-        self._grd_mesh_z = numpy.ndarray((self.blk_num, 
+        self._grd_mesh_z = numpy.ndarray((3, self.blk_num, 
                                           self.blk_size_z + self.blk_guards,
                                           self.blk_size_y + self.blk_guards, 
                                           self.blk_size_x + self.blk_guards), dtype=numpy.dtype(float))
@@ -295,26 +297,40 @@ class GeometryData(_BaseData):
         # initialize mesh grids for cell centered fields
         if self.grd_type == 'uniform':
             grds = self.blk_guards
-            gsft = (self.blk_guards - 1) / 2
             size = (self.blk_size_x, self.blk_size_y, self.blk_size_z)
-            for block in range(self.blk_num):
-                bbox = self.blk_bndbox[block]
+            gsft = (self.blk_guards - 1) / 2
 
-                dx = (bbox[0][1] - bbox[0][0]) / size[0]
-                dy = (bbox[1][1] - bbox[1][0]) / size[1]
-                dz = (bbox[2][1] - bbox[2][0]) / size[2]
+            for face, fsft in enumerate({-1/2, 0, 1/2}):
+                for block in range(self.blk_num):
+                    bbox = self.blk_bndbox[block]
 
-                x = numpy.linspace(bbox[0][0] - gsft * dx, bbox[0][1] + gsft * dx, size[0] + grds, True)
-                y = numpy.linspace(bbox[1][0] - gsft * dy, bbox[1][1] + gsft * dy, size[1] + grds, True)
-                z = numpy.linspace(bbox[2][0] - gsft * dz, bbox[2][1] + gsft * dz, size[2] + grds, True)
+                    dx = (bbox[0][1] - bbox[0][0]) / size[0]
+                    dy = (bbox[1][1] - bbox[1][0]) / size[1]
+                    dz = (bbox[2][1] - bbox[2][0]) / size[2]
 
-                Z, Y, X = numpy.meshgrid(z, y, x, indexing='ij')
-                self._grd_mesh_x[block, :, :, :] = X
-                self._grd_mesh_y[block, :, :, :] = Y
-                self._grd_mesh_z[block, :, :, :] = Z
+                    x = numpy.linspace(bbox[0][0] + (fsft - gsft) * dx, 
+                                       bbox[0][1] + (fsft + gsft) * dx, size[0] + grds, True)
+                    y = numpy.linspace(bbox[1][0] + (fsft - gsft) * dy, 
+                                       bbox[1][1] + (fsft + gsft) * dy, size[1] + grds, True)
+                    z = numpy.linspace(bbox[2][0] + (fsft - gsft) * dz, 
+                                       bbox[2][1] + (fsft + gsft) * dz, size[2] + grds, True)
+
+                    Z, Y, X = numpy.meshgrid(z, y, x, indexing='ij')
+                    self._grd_mesh_x[face, block, :, :, :] = X
+                    self._grd_mesh_y[face, block, :, :, :] = Y
+                    self._grd_mesh_z[face, block, :, :, :] = Z
 
         elif self.grd_type == 'regular':
-            pass # handle generating regular grid points -- from file
+            grids = {"x" : ["xxxl", "xxxc", "xxxr"],
+                     "y" : ["yyyl", "yyyc", "yyyr"],
+                     "z" : ["zzzl", "zzzc", "zzzr"]}
+            with open_hdf5(gridfilename, 'r') as gridfile:
+                for face, name in enumerate(grids["x"]):
+                    self._grd_mesh_x[face, :, 1:-1, 1:-1, 1:-1] = gridfile[name][()]
+                for face, name in enumerate(grids["y"]):
+                    self._grd_mesh_y[face, :, 1:-1, 1:-1, 1:-1] = gridfile[name][()]
+                for face, name in enumerate(grids["z"]):
+                    self._grd_mesh_z[face, :, 1:-1, 1:-1, 1:-1] = gridfile[name][()]
 
    
         else:
@@ -341,12 +357,12 @@ class GeometryData(_BaseData):
             Mesh data for block data, in x direction (at current timestep)
         """
         g = int(self.blk_guards / 2)
-        return self._grd_mesh_x[:, g:-g, g:-g, g:-g]
+        return self._grd_mesh_x[:, :, g:-g, g:-g, g:-g]
 
     @grd_mesh_x.setter
     def grd_mesh_x(self, value):
         g = int(self.blk_guards / 2)
-        self._grd_mesh_x[:, g:-g, g:-g, g:-g] = value
+        self._grd_mesh_x[:, :, g:-g, g:-g, g:-g] = value
 
     @property
     def grd_mesh_y(self):
@@ -357,12 +373,12 @@ class GeometryData(_BaseData):
             Mesh data for block data, in y direction (at current timestep)
         """
         g = int(self.blk_guards / 2)
-        return self._grd_mesh_y[:, g:-g, g:-g, g:-g]
+        return self._grd_mesh_y[:, :, g:-g, g:-g, g:-g]
 
     @grd_mesh_y.setter
     def grd_mesh_y(self, value):
         g = int(self.blk_guards / 2)
-        self._grd_mesh_y[:, g:-g, g:-g, g:-g] = value
+        self._grd_mesh_y[:, :, g:-g, g:-g, g:-g] = value
 
     @property
     def grd_mesh_z(self):
@@ -373,12 +389,12 @@ class GeometryData(_BaseData):
             Mesh data for block data, in z direction (at current timestep)
         """
         g = int(self.blk_guards / 2)
-        return self._grd_mesh_z[:, g:-g, g:-g, g:-g]
+        return self._grd_mesh_z[:, :, g:-g, g:-g, g:-g]
 
     @grd_mesh_z.setter
     def grd_mesh_z(self, value):
         g = int(self.blk_guards / 2)
-        self._grd_mesh_z[:, g:-g, g:-g, g:-g] = value
+        self._grd_mesh_z[:, :, g:-g, g:-g, g:-g] = value
 
 @dataclass
 class FieldData(_BaseData):

@@ -125,6 +125,7 @@ def _bound_cells_from_data(data, geometry, field):
                         data[block, g:-g, g:-g, -g:] = data[block, g:-g, g:-g, -g-1:-2*g-1:-1]
                 elif geometry.grd_bndcnds["velc"]["right"] in {"neumann", "NEUMANN",
                                                                 "neumann_ins", "NEUMANN_INS"}:
+                    print("neumann face!")
                     if field == "fcx2":
                         print(block)
                         data[block, g:-g, g:-g, -g:] = data[block, g:-g, g:-g, -g-2:-2*g-2:-1]
@@ -219,7 +220,7 @@ def _bound_cells_from_data(data, geometry, field):
                         pass
 
     # apply boundary conditions to temperature
-    elif field == "temp":
+    elif field == "temp1":
         x = geometry._grd_mesh_x
         struct = geometry.blk_neighbors
         for block, faces in enumerate(struct):
