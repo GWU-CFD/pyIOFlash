@@ -35,7 +35,7 @@ import numpy
 import h5py
 
 from pyioflash.simulation.utility import _first_true, _reduce_str, open_hdf5
-from pyioflash.simulation.utility import _guard_cells_from_data, _bound_cells_from_data
+from pyioflash.simulation.support import _guard_cells_from_data, _bound_cells_from_data
 
 @dataclass(order=True)
 class _BaseData(AbstractBase):
@@ -280,21 +280,35 @@ class GeometryData(_BaseData):
         # intialize neighbors type and ids for each block
         self.blk_neighbors = GeometryData._get_neighbors(self.blk_tree_str, self.grd_dim)
 
-        # create mesh grids for cell centered fields (guard data in both directions per axis)
-        self._grd_mesh_x = numpy.ndarray((3, self.blk_num, 
-                                          self.blk_size_z + self.blk_guards,
-                                          self.blk_size_y + self.blk_guards, 
-                                          self.blk_size_x + self.blk_guards), dtype=numpy.dtype(float))
-        self._grd_mesh_y = numpy.ndarray((3, self.blk_num, 
-                                          self.blk_size_z + self.blk_guards,
-                                          self.blk_size_y + self.blk_guards, 
-                                          self.blk_size_x + self.blk_guards), dtype=numpy.dtype(float))
-        self._grd_mesh_z = numpy.ndarray((3, self.blk_num, 
-                                          self.blk_size_z + self.blk_guards,
-                                          self.blk_size_y + self.blk_guards, 
-                                          self.blk_size_x + self.blk_guards), dtype=numpy.dtype(float))
+        # create mesh grids for cell centered and face fields (guard data in both directions per axis)
+        # FUTURE -- only load on demand
+        self._grd_mesh_x = numpy.zeros((3, self.blk_num,
+                                        self.blk_size_z + self.blk_guards,
+                                        self.blk_size_y + self.blk_guards, 
+                                        self.blk_size_x + self.blk_guards), dtype=numpy.dtype(float))
+        self._grd_mesh_y = numpy.zeros((3, self.blk_num, 
+                                        self.blk_size_z + self.blk_guards,
+                                        self.blk_size_y + self.blk_guards, 
+                                        self.blk_size_x + self.blk_guards), dtype=numpy.dtype(float))
+        self._grd_mesh_z = numpy.zeros((3, self.blk_num, 
+                                        self.blk_size_z + self.blk_guards,
+                                        self.blk_size_y + self.blk_guards, 
+                                        self.blk_size_x + self.blk_guards), dtype=numpy.dtype(float))
+        self._grd_mesh_ddx = numpy.zeros((3, self.blk_num, 
+                                        self.blk_size_z + self.blk_guards,
+                                        self.blk_size_y + self.blk_guards, 
+                                        self.blk_size_x + self.blk_guards), dtype=numpy.dtype(float))
+        self._grd_mesh_ddy = numpy.zeros((3, self.blk_num, 
+                                        self.blk_size_z + self.blk_guards,
+                                        self.blk_size_y + self.blk_guards, 
+                                        self.blk_size_x + self.blk_guards), dtype=numpy.dtype(float))
+        self._grd_mesh_ddz = numpy.zeros((3, self.blk_num, 
+                                        self.blk_size_z + self.blk_guards,
+                                        self.blk_size_y + self.blk_guards, 
+                                        self.blk_size_x + self.blk_guards), dtype=numpy.dtype(float))
 
-        # initialize mesh grids for cell centered fields
+        # initialize mesh grids for cell centered and face fields
+        # FUTURE -- only load on demand
         if self.grd_type == 'uniform':
             grds = self.blk_guards
             size = (self.blk_size_x, self.blk_size_y, self.blk_size_z)
@@ -319,19 +333,46 @@ class GeometryData(_BaseData):
                     self._grd_mesh_x[face, block, :, :, :] = X
                     self._grd_mesh_y[face, block, :, :, :] = Y
                     self._grd_mesh_z[face, block, :, :, :] = Z
+                    self._grd_mesh_ddx[face, block, :, :, :] = 1 / dx
+                    self._grd_mesh_ddy[face, block, :, :, :] = 1 / dy
+                    if self.grd_dim == 3:
+                        self._grd_mesh_ddz[face, block, :, :, :] = 1 / dz
 
         elif self.grd_type == 'regular':
             grids = {"x" : ["xxxl", "xxxc", "xxxr"],
                      "y" : ["yyyl", "yyyc", "yyyr"],
-                     "z" : ["zzzl", "zzzc", "zzzr"]}
+                     "z" : ["zzzl", "zzzc", "zzzr"],
+                     "ddx" : ["ddxl", "ddxc", "ddxr"],
+                     "ddy" : ["ddyl", "ddyc", "ddyr"],
+                     "ddz" : ["ddzl", "ddzc", "ddzr"]}
             with open_hdf5(gridfilename, 'r') as gridfile:
                 for face, name in enumerate(grids["x"]):
                     self._grd_mesh_x[face, :, 1:-1, 1:-1, 1:-1] = gridfile[name][()]
+                    _guard_cells_from_data(self._grd_mesh_x[face, :, :, :, :], self)
+                    _bound_cells_from_data(self._grd_mesh_x[face, :, :, :, :], self, name)
                 for face, name in enumerate(grids["y"]):
                     self._grd_mesh_y[face, :, 1:-1, 1:-1, 1:-1] = gridfile[name][()]
+                    _guard_cells_from_data(self._grd_mesh_y[face, :, :, :, :], self)
+                    _bound_cells_from_data(self._grd_mesh_y[face, :, :, :, :], self, name)
                 for face, name in enumerate(grids["z"]):
                     self._grd_mesh_z[face, :, 1:-1, 1:-1, 1:-1] = gridfile[name][()]
+                    _guard_cells_from_data(self._grd_mesh_z[face, :, :, :, :], self)
+                    _bound_cells_from_data(self._grd_mesh_z[face, :, :, :, :], self, name)
+                for face, name in enumerate(grids["ddx"]):
+                    self._grd_mesh_ddx[face, :, 1:-1, 1:-1, 1:-1] = gridfile[name][()]
+                    _guard_cells_from_data(self._grd_mesh_ddx[face, :, :, :, :], self)
+                    _bound_cells_from_data(self._grd_mesh_ddx[face, :, :, :, :], self, name)
+                for face, name in enumerate(grids["ddy"]):
+                    self._grd_mesh_ddy[face, :, 1:-1, 1:-1, 1:-1] = gridfile[name][()]
+                    _guard_cells_from_data(self._grd_mesh_ddy[face, :, :, :, :], self)
+                    _bound_cells_from_data(self._grd_mesh_ddy[face, :, :, :, :], self, name)
+                for face, name in enumerate(grids["ddz"]):
+                    self._grd_mesh_ddz[face, :, 1:-1, 1:-1, 1:-1] = gridfile[name][()]
+                    _guard_cells_from_data(self._grd_mesh_ddz[face, :, :, :, :], self)
+                    _bound_cells_from_data(self._grd_mesh_ddz[face, :, :, :, :], self, name)
 
+        elif self.grd_type == 'paramesh':
+            pass # paramesh grid handling operations
    
         else:
             pass # other mesh grid handling operations
@@ -341,7 +382,8 @@ class GeometryData(_BaseData):
         setattr(self, '_attributes', {
             'blk_num', 'blk_num_x', 'blk_num_y', 'blk_num_z', 'blk_size_x',
             'blk_size_y', 'blk_size_z', 'blk_guards', 'blk_coords', 'blk_bndbox',
-            'grd_type', 'grd_dim', 'grd_mesh_x', 'grd_mesh_y', 'grd_mesh_z'})
+            'grd_type', 'grd_dim', 'grd_mesh_x', 'grd_mesh_y', 'grd_mesh_z',
+            'grd_mesh_ddx', 'grd_mesh_ddy', 'grd_mesh_ddz'})
 
     def __str__(self) -> str:
         fields = ['grd_type', 'blk_num', 'blk_num_x', 'blk_num_y', 'blk_num_z',
@@ -354,7 +396,7 @@ class GeometryData(_BaseData):
         Method to provide the property grd_mesh_x.
 
         Returns:
-            Mesh data for block data, in x direction (at current timestep)
+            Mesh data for block data, in x direction 
         """
         g = int(self.blk_guards / 2)
         return self._grd_mesh_x[:, :, g:-g, g:-g, g:-g]
@@ -370,7 +412,7 @@ class GeometryData(_BaseData):
         Method to provide the property grd_mesh_y.
 
         Returns:
-            Mesh data for block data, in y direction (at current timestep)
+            Mesh data for block data, in y direction 
         """
         g = int(self.blk_guards / 2)
         return self._grd_mesh_y[:, :, g:-g, g:-g, g:-g]
@@ -386,7 +428,7 @@ class GeometryData(_BaseData):
         Method to provide the property grd_mesh_z.
 
         Returns:
-            Mesh data for block data, in z direction (at current timestep)
+            Mesh data for block data, in z direction
         """
         g = int(self.blk_guards / 2)
         return self._grd_mesh_z[:, :, g:-g, g:-g, g:-g]
@@ -395,6 +437,54 @@ class GeometryData(_BaseData):
     def grd_mesh_z(self, value):
         g = int(self.blk_guards / 2)
         self._grd_mesh_z[:, :, g:-g, g:-g, g:-g] = value
+
+    @property
+    def grd_mesh_ddx(self):
+        """
+        Method to provide the property grd_mesh_ddx.
+
+        Returns:
+            Metric mesh data for block data, in x direction
+        """
+        g = int(self.blk_guards / 2)
+        return self._grd_mesh_ddx[:, :, g:-g, g:-g, g:-g]
+
+    @grd_mesh_ddx.setter
+    def grd_mesh_ddx(self, value):
+        g = int(self.blk_guards / 2)
+        self._grd_mesh_ddx[:, :, g:-g, g:-g, g:-g] = value
+
+    @property
+    def grd_mesh_ddy(self):
+        """
+        Method to provide the property grd_mesh_ddy.
+
+        Returns:
+            Metric mesh data for block data, in y direction
+        """
+        g = int(self.blk_guards / 2)
+        return self._grd_mesh_ddy[:, :, g:-g, g:-g, g:-g]
+
+    @grd_mesh_ddy.setter
+    def grd_mesh_ddy(self, value):
+        g = int(self.blk_guards / 2)
+        self._grd_mesh_ddy[:, :, g:-g, g:-g, g:-g] = value
+
+    @property
+    def grd_mesh_ddz(self):
+        """
+        Method to provide the property grd_mesh_ddz.
+
+        Returns:
+            Metric mesh data for block data, in z direction
+        """
+        g = int(self.blk_guards / 2)
+        return self._grd_mesh_ddz[:, :, g:-g, g:-g, g:-g]
+
+    @grd_mesh_ddz.setter
+    def grd_mesh_ddz(self, value):
+        g = int(self.blk_guards / 2)
+        self._grd_mesh_ddz[:, :, g:-g, g:-g, g:-g] = value
 
 @dataclass
 class FieldData(_BaseData):
@@ -423,12 +513,10 @@ class FieldData(_BaseData):
     @staticmethod
     def _fill_guard(data, geometry):
         _guard_cells_from_data(data, geometry)
-         
                 
     @staticmethod
     def _fill_bound(data, geometry, field):
         _bound_cells_from_data(data, geometry, field)
-
 
     # pylint: disable=arguments-differ
     def _init_process(self, file: h5py.File, code: str, form: str, geometry: GeometryData) -> None:
@@ -488,7 +576,7 @@ class FieldData(_BaseData):
 
             # fill guard and bound cell data
             FieldData._fill_guard(data, geometry)
-            FieldData._fill_bound(data, geometry, group)
+            #FieldData._fill_bound(data, geometry, group)
 
             # attach dataset to FieldData instance
             setattr(self, '_' + group, data)
