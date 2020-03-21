@@ -8,13 +8,13 @@ MESSAGE = 'pyioflash requires python version 3.7 or greater'
 assert MAJOR == 3 and MINOR >= 7, MESSAGE
 
 # get the long description from the README file
-with open('readme.md') as readme:
+with open('readme.rst') as readme:
     LONG_DESCRIPTION = readme.read()
 
 # define the setup configuration
 setup(
     name='pyioflash',
-    version='1.0.40',
+    version='1.0.41',
     description='A Python package for processing FLASH4 simulations.',
     long_description=LONG_DESCRIPTION,
     url='https://github.com/Balaras-Group/pyIOFlash',

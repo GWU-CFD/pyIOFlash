@@ -24,6 +24,7 @@ Example:
 Todo:
     * Extend SortedDict to allow type(key) other than float
     * Improve code by refactoring out if/elif/else constructs
+
 """
 from abc import ABC as AbstractBase, abstractmethod
 from collections import OrderedDict
@@ -31,7 +32,7 @@ from typing import Any, Tuple, List, Dict, Iterable, Union
 
 import numpy
 
-from .pyio_utility import _filter_transpose, _first_true, _set_is_unique
+from pyioflash.simulation.utility import _filter_transpose, _first_true, _set_is_unique
 
 class SortedDict:
     """

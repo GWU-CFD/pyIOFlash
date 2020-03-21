@@ -11,10 +11,10 @@ import matplotlib
 from matplotlib import pyplot, cm, lines
 from matplotlib.font_manager import FontProperties
 
-from .pyio import SimulationData
-from .pyio_utility import _first_true
-from .pyio_utility import Plane
-from .pyio_options import FigureOptions, PlotOptions, AnimationOptions
+from pyioflash.simulation.data import SimulationData
+from pyioflash.visual.geometry import Plane
+from pyioflash.visual.options import FigureOptions, PlotOptions, AnimationOptions
+from pyioflash.simulation.utility import _first_true
 
 
 _map_axes = {'x': 0, 'y': 1, 'z': 2}

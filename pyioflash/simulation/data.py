@@ -2,14 +2,20 @@
 
 This class is the workhorse of the pyIOFlash package; providing methods and members to read, process, and
 store simulation output, allowing for convienent and intuitive post-processing and ploting of simulation data.
+
+Todo:
+
 """
 
 from typing import Any, Tuple, List, Dict, Callable
 
-from .pyio_utility import _reduce_str
-from .pyio_utility import open_hdf5, NameData
-from .pyio_collections import SortedDict, TransposableAsArray, TransposableAsSingle
-from .pyio_types import GeometryData, FieldData, ScalarData, StaticData
+from pyioflash.simulation.series import NameData
+from pyioflash.simulation.utility import _reduce_str, open_hdf5
+from pyioflash.simulation.collections import SortedDict, TransposableAsArray, TransposableAsSingle
+from pyioflash.simulation.geometry import GeometryData
+from pyioflash.simulation.fields import FieldData
+from pyioflash.simulation.scalars import ScalarData
+from pyioflash.simulation.statics import StaticData
 
 
 class SimulationData:
@@ -54,7 +60,7 @@ class SimulationData:
         files (NameData): list of filenames and paths to be processed
         code (str): flag for the code which produced the output (e.g., flash)
         form (str): flag for the format of the hdf5 output file (e.g., plt)
-        geometry (SortedDict): geometry data/information from the processed hdf5 files
+        geometry (GeometryData): geometry data/information from the processed hdf5 file (first)
         fields (SortedDict): vector and scalar field data from the processed hdf5 files
         scalars (SortedDict): scalar (e.g., time, dt) data from the processed hdf5 files
         dynamics (SortedDict): time varying information from the processed hdf5 files
@@ -62,7 +68,7 @@ class SimulationData:
 
     Note:
 
-        While each of geometry, fields, scalars, dynamics, and statics is a
+        While each of fields, scalars, dynamics, and statics is a
         :class:`~pyioflash.pyio_collections.SortedDict` object, each is in actuality a composition of SortedDict
         and a derived class of :class:`~pyioflash.pyio_collections.BaseTransposable`; specifically, either
         :class:`~pyioflash.pyio_collections.TransposableAsArray` or
@@ -73,7 +79,7 @@ class SimulationData:
     files: NameData
     code: str
     form: str
-    geometry: SortedDict
+    geometry: GeometryData
     fields: SortedDict
     scalars: SortedDict
     dynamics: SortedDict
@@ -92,7 +98,6 @@ class SimulationData:
             self.code = 'flash'
 
         # initialize empty containers
-        self.geometry = type('TransposableAsArray_SortedDict', (TransposableAsArray, SortedDict), {})([])
         self.fields = type('TransposableAsArray_SortedDict', (TransposableAsArray, SortedDict), {})([])
         self.scalars = type('TransposableAsArray_SortedDict', (TransposableAsArray, SortedDict), {})([])
         self.dynamics = type('TransposableAsSingle_SortedDict', (TransposableAsSingle, SortedDict), {})([])
@@ -114,9 +119,9 @@ class SimulationData:
             raise Exception(f'Codes other then FLASH4 not supported; code == flash')
 
     @classmethod
-    def from_list(cls, numbers: List[int], *, numform: str = None,
-                  path: str = None, header: str = None, footer: str = None, ext: str = None,
-                  form: str = None, code: str = None) -> 'SimulationData':
+    def from_list(cls, numbers: List[int], *, numform: str = None, path: str = None,
+                  basename: str = None, header: str = None, footer: str = None, gnumber: int = None,
+                  ext: str = None, form: str = None, code: str = None) -> 'SimulationData':
         """Creates a SimulationData instance from a list of file numbers.
 
         This class method provides the capability to supply a list of integers associated with
@@ -145,6 +150,8 @@ class SimulationData:
         options: Dict[str, Any] = {'numbers' : numbers}
         if path is not None:
             options['directory'] = path
+        if basename is not None:
+            options['basename'] = basename
         if header is not None:
             options['header'] = header
         if footer is not None:
@@ -153,6 +160,8 @@ class SimulationData:
             options['extention'] = ext
         if numform is not None:
             options['numform'] = numform
+        if gnumber is not None:
+            options['geonumber'] = gnumber
 
         return cls(NameData(**options), code=code, form=form)
 
@@ -173,7 +182,7 @@ class SimulationData:
         # format = [(group, dataset, member_name), ...]
         def_scalars: List[Tuple[str, str, str]] = [
             ('real scalars', 'time', 't'),
-            ('real scalars', 'dt '),
+            ('real scalars', 'dt'),
             ('integer scalars', 'nstep'),
             ('integer scalars', 'nbegin')]
 
@@ -194,13 +203,12 @@ class SimulationData:
 
         # process first FLASH4 hdf5 file
         with open_hdf5(self.files.names[0], 'r') as file:
+            setattr(self, 'geometry', GeometryData(file, self.code, self.form, self.files.geometry))
             setattr(self, 'statics', StaticData(file, self.code, self.form, def_statics))
 
         # process FLASH4 hdf5 files
         for name in self.files.names:
             with open_hdf5(name, 'r') as file:
-                geometry: GeometryData = GeometryData(file, self.code, self.form)
-                self.geometry.append(geometry)
-                self.fields.append(FieldData(file, self.code, self.form, geometry))
+                self.fields.append(FieldData(file, self.code, self.form, self.geometry))
                 self.scalars.append(ScalarData(file, self.code, self.form, def_scalars))
                 self.dynamics.append(StaticData(file, self.code, self.form, def_dynamics))
