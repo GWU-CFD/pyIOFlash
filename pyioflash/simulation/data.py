@@ -2,6 +2,9 @@
 
 This class is the workhorse of the pyIOFlash package; providing methods and members to read, process, and
 store simulation output, allowing for convienent and intuitive post-processing and ploting of simulation data.
+
+Todo:
+
 """
 
 from typing import Any, Tuple, List, Dict, Callable
@@ -9,7 +12,10 @@ from typing import Any, Tuple, List, Dict, Callable
 from pyioflash.simulation.series import NameData
 from pyioflash.simulation.utility import _reduce_str, open_hdf5
 from pyioflash.simulation.collections import SortedDict, TransposableAsArray, TransposableAsSingle
-from pyioflash.simulation.types import GeometryData, FieldData, ScalarData, StaticData
+from pyioflash.simulation.geometry import GeometryData
+from pyioflash.simulation.fields import FieldData
+from pyioflash.simulation.scalars import ScalarData
+from pyioflash.simulation.statics import StaticData
 
 
 class SimulationData:
@@ -114,7 +120,7 @@ class SimulationData:
 
     @classmethod
     def from_list(cls, numbers: List[int], *, numform: str = None, path: str = None,
-                  basename: str = None, header: str = None, footer: str = None,
+                  basename: str = None, header: str = None, footer: str = None, gnumber: int = None,
                   ext: str = None, form: str = None, code: str = None) -> 'SimulationData':
         """Creates a SimulationData instance from a list of file numbers.
 
@@ -154,6 +160,8 @@ class SimulationData:
             options['extention'] = ext
         if numform is not None:
             options['numform'] = numform
+        if gnumber is not None:
+            options['geonumber'] = gnumber
 
         return cls(NameData(**options), code=code, form=form)
 

@@ -24,6 +24,7 @@ Example:
 Todo:
     * Extend SortedDict to allow type(key) other than float
     * Improve code by refactoring out if/elif/else constructs
+
 """
 from abc import ABC as AbstractBase, abstractmethod
 from collections import OrderedDict

@@ -5,7 +5,6 @@ This module defines the support methods and classes necessary for the pyio packa
 Todo:
     * Provide more correct and/or higher performance data filling
     * Eliminate branches in favor of casting for support methods
-    * Add support for Inflow and Outflow boundary conditions
 
 """
 
@@ -30,6 +29,12 @@ def _guard_cells_from_data(data, geometry):
         if "back" in faces:
             data[block, g:-g, :g, g:-g] = data[faces["back"], g:-g, -2*g:-g, g:-g]
 
+        # z-direction (up, down)
+        if "up" in faces:
+            data[block, -g:, g:-g, g:-g] = data[faces["up"], g:2*g, g:-g, g:-g]
+        if "down" in faces:
+            data[block, :g, g:-g, g:-g] = data[faces["down"], -2*g:-g, g:-g, g:-g]
+
         # xy-directions ( {left || right} && {front || back} ) 
         if "right" in faces and "front" in faces:
             data[block, g:-g, -g:, -g:] = data[struct[faces["right"]]["front"], g:-g, g:2*g, g:2*g]
@@ -41,12 +46,6 @@ def _guard_cells_from_data(data, geometry):
             data[block, g:-g, :g, :g] = data[struct[faces["left"]]["back"], g:-g, -2*g:-g, -2*g:-g]
 
         if geometry.grd_dim == 3:
-
-            # z-direction (up, down)
-            if "up" in faces:
-                data[block, -g:, g:-g, g:-g] = data[faces["up"], g:2*g, g:-g, g:-g]
-            if "down" in faces:
-                data[block, :g, g:-g, g:-g] = data[faces["down"], -2*g:-g, g:-g, g:-g]
             
             # xz-directions ( {left || right} && {up || down} )
             if "right" in faces and "up" in faces:
@@ -331,42 +330,44 @@ def _bound_cells_from_data_temp(data, geometry, field):
     z = geometry._grd_mesh_z[1]
     struct = geometry.blk_neighbors
 
+
+
     # fill all boundary faces in first cycle
     for block, faces in enumerate(struct):
 
         # x-direction (right)
         if "right" not in faces:
             if geometry.grd_bndcnds[field]["right"] in {"dirichlet_ht", "DIRICHLET_HT"}:
-                data[block,g:-g,g:-g,-g:] = 2 * geometry.grd_bndvals[field]["right"] - data[block,g:-g,g:-g,-g-1:-2*g-1:-1]
+                data[block,:,:,-g:] = 2 * geometry.grd_bndvals[field]["right"] - data[block,:,:,-g-1:-2*g-1:-1]
             elif geometry.grd_bndcnds[field]["right"] in {"neumann_ht", "neumann_ht"}:
-                data[block,g:-g,g:-g,-g:] = (x[block,g:-g,g:-g,-g:] - x[block,g:-g,g:-g,-g-1:-2*g-1:-1]) * geometry.grd_bndvals[field]["right"] + data[block,g:-g,g:-g,-g-1:-2*g-1:-1]
+                data[block,:,:,-g:] = (x[block,:,:,-g:] - x[block,:,:,-g-1:-2*g-1:-1]) * geometry.grd_bndvals[field]["right"] + data[block,:,:,-g-1:-2*g-1:-1]
             else:
                 pass
 
         # x-direction (left)
         if "left" not in faces:
             if geometry.grd_bndcnds[field]["left"] in {"dirichlet_ht", "DIRICHLET_HT"}:
-                data[block,g:-g,g:-g,:g] = 2 * geometry.grd_bndvals[field]["left"] - data[block,g:-g,g:-g,2*g-1:g-1:-1]
+                data[block,:,:,:g] = 2 * geometry.grd_bndvals[field]["left"] - data[block, :, :,2*g-1:g-1:-1]
             elif geometry.grd_bndcnds[field]["left"] in {"neumann_ht", "neumann_ht"}:
-                data[block,g:-g,g:-g,:g] = (x[block,:,:,2*g-1:g-1:-1] - x[block,g:-g,g:-g,:g]) * geometry.grd_bndvals[field]["left"] + data[block,g:-g,g:-g,2*g-1:g-1:-1]
+                data[block,:,:,:g] = (x[block,:,:,2*g-1:g-1:-1] - x[block,:,:,:g]) * geometry.grd_bndvals[field]["left"] + data[block,:,:,2*g-1:g-1:-1]
             else:
                 pass
 
         # y-direction (front)
         if "front" not in faces:
             if geometry.grd_bndcnds[field]["front"] in {"dirichlet_ht", "DIRICHLET_HT"}:
-                data[block,g:-g,-g:,g:-g] = 2 * geometry.grd_bndvals[field]["front"] - data[block,g:-g,-g-1:-2*g-1:-1,g:-g]
+                data[block,:,-g:,:] = 2 * geometry.grd_bndvals[field]["front"] - data[block,:,-g-1:-2*g-1:-1,:]
             elif geometry.grd_bndcnds[field]["front"] in {"neumann_ht", "neumann_ht"}:
-                data[block,g:-g,-g:,g:-g] = (y[block,g:-g,-g:,g:-g] - y[block,g:-g,-g-1:-2*g-1:-1,g:-g]) * geometry.grd_bndvals[field]["front"] + data[block,g:-g,-g-1:-2*g-1:-1,g:-g]
+                data[block,:,-g:,:] = (y[block,:,-g:,:] - y[block,:,-g-1:-2*g-1:-1,:]) * geometry.grd_bndvals[field]["front"] + data[block,:,-g-1:-2*g-1:-1,:]
             else:
                 pass
 
         # y-direction (back)
         if "back" not in faces:
             if geometry.grd_bndcnds[field]["back"] in {"dirichlet_ht", "DIRICHLET_HT"}:
-                data[block,g:-g,:g,g:-g] = 2 * geometry.grd_bndvals[field]["back"] - data[block,g:-g,2*g-1:g-1:-1,g:-g]
+                data[block,:,:g,:] = 2 * geometry.grd_bndvals[field]["back"] - data[block,:,2*g-1:g-1:-1,:]
             elif geometry.grd_bndcnds[field]["back"] in {"neumann_ht", "neumann_ht"}:
-                data[block,g:-g,:g,g:-g] = (y[block,g:-g,2*g-1:g-1:-1,g:-g] - y[block,g:-g,:g,g:-g]) * geometry.grd_bndvals[field]["back"] + data[block,g:-g,2*g-1:g-1:-1,g:-g]
+                data[block,:,:g,:] = (y[block,:,2*g-1:g-1:-1,:] - y[block,:,:g,:]) * geometry.grd_bndvals[field]["back"] + data[block,:,2*g-1:g-1:-1,:]
             else:
                 pass
 
@@ -385,11 +386,43 @@ def _bound_cells_from_data_temp(data, geometry, field):
             # z-direction (down)
             if "down" not in faces:
                 if geometry.grd_bndcnds[field]["down"] in {"dirichlet_ht", "DIRICHLET_HT"}:
-                    data[block,g:-g,g:-g,:g] = 2 * geometry.grd_bndvals[field]["down"] - data[block,g:-g,g:-g,2*g-1:g-1:-1]
+                    data[block, g:-g, g:-g, :g] = 2 * geometry.grd_bndvals[field]["down"] - \
+                        data[block, g:-g, g:-g, 2*g-1:g-1:-1]
                 elif geometry.grd_bndcnds[field]["down"] in {"neumann_ht", "neumann_ht"}:
-                    data[block,:g,g:-g,g:-g] = (z[block,2*g-1:g-1:-1,g:-g,g:-g] - z[block,:g,g:-g,g:-g]) * geometry.grd_bndvals[field]["down"] + data[block,2*g-1:g-1:-1,g:-g,g:-g]
+                    data[block, :g, g:-g, g:-g] = (z[block, 2*g-1:g-1:-1, g:-g, g:-g] - z[block, :g, g:-g, g:-g]) * \
+                        geometry.grd_bndvals[field]["down"] + data[block, 2*g-1:g-1:-1, g:-g, g:-g]
                 else:
                     pass
+
+        # fill all z boundary faces (xy internally bounded) in second cycle
+        for block, faces in enumerate(struct):
+
+            # xz-directions ( {left || right} && {up || down} )
+            if "right" in faces and "up" not in faces:
+                data[block, -g:, g:-g, -g:] = data[faces["right"], -g:, g:-g, g:2*g]
+
+
+
+    # fill all xz and yz planer boundary faces in second cycle
+    for block, faces in enumerate(struct):
+
+
+
+        # xy-directions ( {left || right} && {front || back} )
+        # correct the domain corners as avg of the directional ghost cells
+        if "right" not in faces and "front" not in faces:
+            data[block, :, -g:, -g:] = data[block, :, -g:, -g-1] / 2
+            data[block, :, -g:, -g:] += data[block, :, -g-1, -g:] / 2
+        if "left" not in faces and "front" not in faces:
+            data[block, :, -g:, :g] = data[block, :, -g:, g] / 2
+            data[block, :, -g:, :g] += data[block, :, -g-1, :g] / 2
+        if "right" not in faces and "back" not in faces:
+            data[block, :, :g, -g:] = data[block, :, :g, -g-1] / 2
+            data[block, :, :g, -g:] += data[block, :, g, -g:] / 2
+        if "left" not in faces and "back" not in faces:
+            data[block, :, :g, :g] = data[block, :, :g, g] / 2
+            data[block, :, :g, :g] += data[block, :, g, :g] / 2
+
 
 def _bound_cells_from_data_pres(data, geometry, field):
     """ Provides a method for filling boundary guards cells 
@@ -401,47 +434,56 @@ def _bound_cells_from_data_pres(data, geometry, field):
     """
     g = int(geometry.blk_guards / 2)
     struct = geometry.blk_neighbors
-    field = "velc"
 
+    print(field + " in _pres support")
+    field = "velc"
     for block, faces in enumerate(struct):
 
         # x-direction (right)
         if "right" not in faces:
-            if geometry.grd_bndcnds[field]["right"] in {"dirichlet","DIRICHLET"}:
-                data[block,g:-g,g:-g,-g:] = 2 * 0.0 - data[block,g:-g,g:-g,-g-1:-2*g-1:-1]
-            elif geometry.grd_bndcnds[field]["right"] in {"neumann","neumann","noslip_ins", "NOSLIP_INS",
-                                                          "slip_ins","SLIP_INS","movlid_ins", "MOVLID_INS"}:
-                data[block,g:-g,g:-g,-g:] = 0.0 + data[block,g:-g,g:-g,-g-1:-2*g-1:-1]
+            if geometry.grd_bndcnds[field]["right"] in {"dirichlet", "DIRICHLET"}:
+                data[block, g:-g, g:-g, -g:] = 2 * 0.0 - data[block, g:-g, g:-g, -g-1:-2*g-1:-1]
+            elif geometry.grd_bndcnds[field]["right"] in {"neumann",    "neumann",
+                                                          "noslip_ins", "NOSLIP_INS",
+                                                          "slip_ins",   "SLIP_INS",
+                                                          "movlid_ins", "MOVLID_INS"}:
+                data[block, g:-g, g:-g, -g:] = 0.0 + data[block, g:-g, g:-g, -g-1:-2*g-1:-1]
             else:
                 pass
 
         # x-direction (left)
         if "left" not in faces:
-            if geometry.grd_bndcnds[field]["right"] in {"dirichlet","DIRICHLET"}:
-                data[block,g:-g,g:-g,:g] = 2 * 0.0 - data[block,g:-g,g:-g,2*g-1:g-1:-1]
-            elif geometry.grd_bndcnds[field]["right"] in {"neumann","neumann","noslip_ins","NOSLIP_INS",
-                                                          "slip_ins","SLIP_INS","movlid_ins","MOVLID_INS"}:
-                data[block,g:-g,g:-g,:g] = 0.0 + data[block,g:-g,g:-g,2*g-1:g-1:-1]
+            if geometry.grd_bndcnds[field]["right"] in {"dirichlet", "DIRICHLET"}:
+                data[block, g:-g, g:-g, :g] = 2 * 0.0 - data[block, g:-g, g:-g, 2*g-1:g-1:-1]
+            elif geometry.grd_bndcnds[field]["right"] in {"neumann",    "neumann",
+                                                          "noslip_ins", "NOSLIP_INS",
+                                                          "slip_ins",   "SLIP_INS",
+                                                          "movlid_ins", "MOVLID_INS"}:
+                data[block, g:-g, g:-g, :g] = 0.0 + data[block, g:-g, g:-g, 2*g-1:g-1:-1]
             else:
                 pass
 
         # y-direction (front)
         if "front" not in faces:
-            if geometry.grd_bndcnds[field]["front"] in {"dirichlet","DIRICHLET"}:
-                data[block,g:-g,-g:,g:-g] = 2 * 0.0 - data[block,g:-g,-g-1:-2*g-1:-1,g:-g]
-            elif geometry.grd_bndcnds[field]["front"] in {"neumann","neumann","noslip_ins","NOSLIP_INS",
-                                                          "slip_ins","SLIP_INS","movlid_ins","MOVLID_INS"}:
-                data[block,g:-g,-g:,g:-g] = 0.0 + data[block,g:-g,-g-1:-2*g-1:-1,g:-g]
+            if geometry.grd_bndcnds[field]["front"] in {"dirichlet", "DIRICHLET"}:
+                data[block, g:-g, -g:, g:-g] = 2 * 0.0 - data[block, g:-g, -g-1:-2*g-1:-1, g:-g]
+            elif geometry.grd_bndcnds[field]["front"] in {"neumann",    "neumann",
+                                                          "noslip_ins", "NOSLIP_INS",
+                                                          "slip_ins",   "SLIP_INS",
+                                                          "movlid_ins", "MOVLID_INS"}:
+                data[block, g:-g, -g:, g:-g] = 0.0 + data[block, g:-g, -g-1:-2*g-1:-1, g:-g]
             else:
                 pass
 
         # y-direction (back)
         if "back" not in faces:
-            if geometry.grd_bndcnds[field]["back"] in {"dirichlet","DIRICHLET"}:
-                data[block,g:-g,:g,g:-g] = 2 * 0.0 - data[block,g:-g,2*g-1:g-1:-1,g:-g]
-            elif geometry.grd_bndcnds[field]["back"] in {"neumann","neumann","noslip_ins","NOSLIP_INS",
-                                                         "slip_ins","SLIP_INS","movlid_ins","MOVLID_INS"}:
-                data[block,g:-g,:g,g:-g] = 0.0 + data[block,g:-g,2*g-1:g-1:-1,g:-g]
+            if geometry.grd_bndcnds[field]["back"] in {"dirichlet", "DIRICHLET"}:
+                data[block, g:-g, :g, g:-g] = 2 * 0.0 - data[block, g:-g, 2*g-1:g-1:-1, g:-g]
+            elif geometry.grd_bndcnds[field]["back"] in {"neumann",    "neumann",
+                                                         "noslip_ins", "NOSLIP_INS",
+                                                         "slip_ins",   "SLIP_INS",
+                                                          "movlid_ins", "MOVLID_INS"}:
+                data[block, g:-g, :g, g:-g] = 0.0 + data[block, g:-g, 2*g-1:g-1:-1, g:-g]
             else:
                 pass
 
@@ -450,20 +492,24 @@ def _bound_cells_from_data_pres(data, geometry, field):
 
             # z-direction (up)
             if "up" not in faces:
-                if geometry.grd_bndcnds[field]["up"] in {"dirichlet","DIRICHLET"}:
-                    data[block,-g:,g:-g,g:-g] = 2 * 0.0 - data[block,-g-1:-2*g-1:-1,g:-g,g:-g]
-                elif geometry.grd_bndcnds[field]["up"] in {"neumann","neumann","noslip_ins","NOSLIP_INS",
-                                                          "slip_ins","SLIP_INS","movlid_ins","MOVLID_INS"}:
-                    data[block,-g:,g:-g,g:-g] = 0.0 + data[block,-g-1:-2*g-1:-1,g:-g,g:-g]
+                if geometry.grd_bndcnds[field]["up"] in {"dirichlet", "DIRICHLET"}:
+                    data[block, -g:, g:-g, g:-g] = 2 * 0.0 - data[block, -g-1:-2*g-1:-1, g:-g, g:-g]
+                elif geometry.grd_bndcnds[field]["up"] in {"neumann",    "neumann",
+                                                          "noslip_ins", "NOSLIP_INS",
+                                                          "slip_ins",   "SLIP_INS",
+                                                          "movlid_ins", "MOVLID_INS"}:
+                    data[block, -g:, g:-g, g:-g] = 0.0 + data[block, -g-1:-2*g-1:-1, g:-g, g:-g]
                 else:
                     pass
 
             # z-direction (down)
             if "down" not in faces:
-                if geometry.grd_bndcnds[field]["down"] in {"dirichlet","DIRICHLET"}:
-                    data[block,g:-g,g:-g,:g] = 2 * 0.0 - data[block,g:-g,g:-g,2*g-1:g-1:-1]
-                elif geometry.grd_bndcnds[field]["down"] in {"neumann","neumann","noslip_ins","NOSLIP_INS",
-                                                             "slip_ins","SLIP_INS","movlid_ins","MOVLID_INS"}:
-                    data[block,:g,g:-g,g:-g] = 0.0 + data[block,2*g-1:g-1:-1,g:-g,g:-g]
+                if geometry.grd_bndcnds[field]["down"] in {"dirichlet", "DIRICHLET"}:
+                    data[block, g:-g, g:-g, :g] = 2 * 0.0 - data[block, g:-g, g:-g, 2*g-1:g-1:-1]
+                elif geometry.grd_bndcnds[field]["down"] in {"neumann",    "neumann",
+                                                             "noslip_ins", "NOSLIP_INS",
+                                                             "slip_ins",   "SLIP_INS",
+                                                          "movlid_ins", "MOVLID_INS"}:
+                    data[block, :g, g:-g, g:-g] = 0.0 + data[block, 2*g-1:g-1:-1, g:-g, g:-g]
                 else:
                     pass

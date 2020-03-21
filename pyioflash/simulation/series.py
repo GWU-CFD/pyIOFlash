@@ -60,6 +60,7 @@ class NameData:
     footer: str = field(repr=False, init=True, compare=False, default='')
     extention: str = field(repr=False, init=True, compare=False, default='')
     numform: str = field(repr=False, init=True, compare=False, default='04d')
+    geonumber: int = field(repr=False, init=True, compare=False, default=0)
     geometry: str = field(repr=False, init=False, compare=False)
     length: int = field(repr=False, init=False, compare=False)
     names: List[str] = field(repr=True, init=False, compare=True)
@@ -68,7 +69,7 @@ class NameData:
         self.names = [self.directory + self.basename + self.header +  f'{n:{self.numform}}' +
                       self.footer + self.extention for n in self.numbers] # pylint: disable=not-an-iterable
         self.length = len(self.names)
-        self.geometry = self.directory + self.basename + 'hdf5_grd_' + f'{self.numbers[0]:{self.numform}}'
+        self.geometry = self.directory + self.basename + 'hdf5_grd_' + f'{self.geonumber:{self.numform}}'
 
     @classmethod
     def from_strings(cls, names: List[str], **kwargs):
