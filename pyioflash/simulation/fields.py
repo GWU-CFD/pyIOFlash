@@ -53,7 +53,7 @@ class FieldData(_BaseData):
     @staticmethod
     def _fill_guard(data, geometry, field):
         _guard_cells_from_data(data, geometry)
-        _bound_cells_from_data(data, geometry, field)      
+        #_bound_cells_from_data(data, geometry, field)      
 
     # pylint: disable=arguments-differ
     def _init_process(self, file: h5py.File, code: str, form: str, geometry: GeometryData) -> None:
@@ -70,7 +70,7 @@ class FieldData(_BaseData):
 
         # initialize named fields
         self._groups = {k.decode('utf-8') for k in unknown_names}
-        if form == 'chk':
+        if form == 'chk' or 'plt':
             if geometry.grd_dim == 3:
                 self._groups.update({'fcx2', 'fcy2', 'fcz2'})
 

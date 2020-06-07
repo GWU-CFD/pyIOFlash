@@ -9,6 +9,8 @@ Todo:
 
 from typing import Any, Tuple, List, Dict, Callable
 
+from sys import stdout
+
 from pyioflash.simulation.series import NameData
 from pyioflash.simulation.utility import _reduce_str, open_hdf5
 from pyioflash.simulation.collections import SortedDict, TransposableAsArray, TransposableAsSingle
@@ -203,12 +205,18 @@ class SimulationData:
 
         # process first FLASH4 hdf5 file
         with open_hdf5(self.files.names[0], 'r') as file:
+            print("\n############    Building SImulationData Object   ############\n")
+            print("Processing metadata from: " + self.files.names[0])
             setattr(self, 'geometry', GeometryData(file, self.code, self.form, self.files.geometry))
             setattr(self, 'statics', StaticData(file, self.code, self.form, def_statics))
 
         # process FLASH4 hdf5 files
         for name in self.files.names:
             with open_hdf5(name, 'r') as file:
+                stdout.write("Processing file: " + name + "\r")
+                stdout.flush()
                 self.fields.append(FieldData(file, self.code, self.form, self.geometry))
                 self.scalars.append(ScalarData(file, self.code, self.form, def_scalars))
                 self.dynamics.append(StaticData(file, self.code, self.form, def_dynamics))
+
+        print("\n\n#############################################################\n\n")
