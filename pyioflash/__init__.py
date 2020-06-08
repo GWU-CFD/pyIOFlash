@@ -15,6 +15,8 @@ from pyioflash.visual import Plane
 # Used to post-process simulation data
 from pyioflash.postprocess import abs_thermal_energy
 from pyioflash.postprocess import rel_thermal_energy
+from pyioflash.postprocess import abs_kinetic_energy
+from pyioflash.postprocess import rel_kinetic_energy
 
 # Used to generate and pre-process simulation data
 
