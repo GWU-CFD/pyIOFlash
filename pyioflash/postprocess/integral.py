@@ -1,141 +1,21 @@
+"""
+
+This module defines the integration methods of the post-processing
+subpackage of the pyioflash lbrary.
+
+This module currently defines the following methods:
+
+    spacial  -> perform spacial integration
+    temporal -> perform temporal integration
+
+Todo:
+
+"""
 from typing import List, Iterable, Union
-from sys import stdout
-from functools import partial
 
 import numpy
 
 from pyioflash.simulation.data import SimulationData
-
-
-# define pretty output formating
-def _make_output(message : str, display : bool):
-
-    def _write_step(step : int):
-        stdout.write(message + " %d \r" % (step))
-        stdout.flush()
-
-    if not display:
-        output = lambda i: None 
-    else: 
-        output = _write_step
-
-    return output
-
-
-def _interpolate_ftc(field : numpy.ndarray, axis : int, guards : int, dim : int) -> numpy.ndarray:
-    
-    # use one-sided guards
-    guards = int(guards / 2)
-
-    # define necessary slice operations
-    iall = slice(None)
-    icom = slice(guards, -guards)
-    izcm = icom if dim == 3 else 1
-    idif = slice(guards - 1, -(guards + 1))
-
-    # define the upper axis; velocity on staggered grid where upper bound is on
-    #   the domain boundary & the outer most interior cell on the high side of axis
-    high = (iall, izcm, icom, icom)
-
-    # define the lower axis; velocity on staggered grid where lower bound is on
-    #   the domain boundary & the inner most guard cell on the low side of axis
-    if axis == 0:
-        low = (iall, izcm, icom, idif) 
-    elif axis == 1:
-        low = (iall, izcm, idif, icom)
-    elif axis == 2:
-        low = (iall, idif, icom, icom)
-    else:
-        pass
-
-    return (field[high] + field[low]) / 2.0
-
-
-def energy_thermal(data : SimulationData, step : Union[int, float, slice], 
-                   scale : Union[None, float] = None) -> numpy.ndarray:
-    """
-    Provides a method for calculation of the thermal energy by 
-    consuming a SimulationData object; must have a 'temp' attribute in the
-    SimulationData.fields object.
-
-    Attributes:
-        data: object containing relavent flash simulation output
-        step: time-like specification for which to process data (key)
-        scale: used to convert returned quantity to dimensional units (optional)
-
-    Note:
-        The thermal energy is computed according to the formula
-
-                E{ijk} = T{ijk}
-
-        The returned quantity is on the cell centered grid
-
-    Todo:
-        Need to implement dimensionality
-
-    """
-    # need the dimensionality
-    dims : int = data.geometry.grd_dim
-
-    # need to define slicing operators based on dims
-    i_all = slice(None)
-    i_zax = slice(None) if dims == 3 else 0
-    index = (i_all, izax, i_all, i_all)
-    
-    # thermal energy is temp in nondimensional units
-    energy = data.fields["temp"][step][0][index]
-
-    # apply a dimensional scale
-    if scale is not None:
-        energy = energy * scale
-
-    return energy
-
-
-def energy_kinetic(data : SimulationData, step : Union[int, float, slice], 
-                   scale : Union[None, float] = None) -> numpy.ndarray:
-    """
-    Provides a method for calculation of the total kinetic energy by 
-    consuming a SimulationData object; must have 'fcx2', 'fcy2' ('fcz2' if 3d) 
-    attributes in the SimulationData.fields object.
-
-    Attributes:
-        data: object containing relavent flash simulation output
-        step: time-like specification for which to process data (key)
-        scale: used to convert returned quantity to dimensional units (optional)
-
-    Note:
-        The total kinetic energy is computed according to the formula
-
-                {u*u + v*v + w*w}ijk
-
-                where the all terms are interpolated to cell centers
-
-    Todo:
-
-    """
-    # need the dimensionality
-    dims : int = data.geometry.grd_dim
-
-    # need to define slicing operators based on dims
-    i_all = slice(None)
-    index = (i_all, i_all, i_all, i_all) if dims == 3 else \
-            (i_all, i_all, i_all)
-
-    # get guard size
-    g : int = data.geometry.blk_guards
-
-    # calculate kinetic energy
-    energy = (_interpolate_ftc(data.fields["_fcx2"][step][0], 0, g, dims)**2)[index]
-    energy = energy + (_interpolate_ftc(data.fields["_fcy2"][step][0], 1, g, dims)**2)[index]
-    if dims == 3:
-        energy = energy + _interpolate_ftc(data.fields["_fcz2"][step][0], 2, g, dims)**2)[index]
-    
-    # apply a dimensional scale
-    if scale is not None:
-        energy = energy * scale
-
-    return energy
 
 
 def integral_space(data : SimulationData, field : Union[str, numpy.ndarray], 
