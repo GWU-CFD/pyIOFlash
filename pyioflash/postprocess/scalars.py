@@ -21,6 +21,35 @@ def _make_output(message : str, display : bool):
 
     return output
 
+
+def _interpolate_ftc(field : numpy.ndarray, axis : int, guards : int, dim : int) -> numpy.ndarray:
+    
+    # use one-sided guards
+    guards = int(guards / 2)
+
+    # define necessary slice operations
+    iall = slice(None)
+    icom = slice(guards, -guards)
+    izcm = icom if dim == 3 else 1
+    idif = slice(guards - 1, -(guards + 1))
+
+    # define the upper axis; velocity on staggered grid where upper bound is on
+    #   the domain boundary & the outer most interior cell on the high side of axis
+    high = (iall, izcm, icom, icom)
+
+    # define the lower axis; velocity on staggered grid where lower bound is on
+    #   the domain boundary & the inner most guard cell on the low side of axis
+    if axis == 0:
+        low = (iall, izcm, icom, idif) 
+    elif axis == 1:
+        low = (iall, izcm, idif, icom)
+    elif axis == 2:
+        low = (iall, idif, icom, icom)
+    else:
+        pass
+
+    return (field[high] + field[low]) / 2.0
+
 def abs_thermal_energy(data : SimulationData, steps : Iterable, display : bool = True) -> List[float]:
     """
     Provides a method for calculation of the integral thermal energy of the domain over a
@@ -163,11 +192,11 @@ def abs_kinetic_energy(data : SimulationData, steps : Iterable, display : bool =
     #   we need the cell centered metric using index 1,
     #   we need to define a slice for all indicies,
     #   and to define index for x, y[, z] field data
-    i_zax = slice(0, None) if dims == 3 else 0
+    i_zax = slice(None) if dims == 3 else 0
     i_cnt = 1
     i_all = slice(None)
     index = (i_all, i_all, i_all, i_all) if dims == 3 else \
-            (i_all, 0, i_all, i_all)
+            (i_all, i_all, i_all)
 
     # retrieve cell centered grid metrics
     ddxc : numpy.ndarray = data.geometry.grd_mesh_ddx[(i_cnt, i_all, i_zax, i_all, i_all)]
@@ -179,13 +208,24 @@ def abs_kinetic_energy(data : SimulationData, steps : Iterable, display : bool =
     if dims == 3:
         volume = volume * 1/ddzc
 
+    # get guard size
+    g = data.geometry.blk_guards
+
+    # define build for z axis if present
+    if dims == 3:
+        wfun = lambda step, index: (_interpolate_ftc(data.fields["_fcz2"][step][0], 2, g, dims)**2)[index]
+    else:
+        wfun = lambda step, index: 0.0
+
     energy = []
     for step in steps:
         output(step)
-        
-        uuxc = ((data.fields["_fcx2"][step][0][:,1:-1,1:-1,2:] + data.fields["_fcx2"][step][0][:,1:-1,1:-1,1:-1]) / 2)**2
-        vvyc = ((data.fields["_fcy2"][step][0][:,1:-1,2:,1:-1] + data.fields["_fcy2"][step][0][:,1:-1,1:-1,1:-1]) / 2)**2
-        energy.append( numpy.sum((uuxc[index] + vvyc[index]) * volume) )
+       
+        uuxc = _interpolate_ftc(data.fields["_fcx2"][step][0], 0, g, dims)**2
+        vvyc = _interpolate_ftc(data.fields["_fcy2"][step][0], 1, g, dims)**2
+        wwzc = wfun(step, index)
+
+        energy.append( numpy.sum((uuxc[index] + vvyc[index] + wwzc) * volume) )
 
     print("") if display else None
     return energy
@@ -246,3 +286,5 @@ def rel_kinetic_energy(data : SimulationData, steps : Iterable, absolute : List[
 
     print("") if display else None
     return energy
+
+
