@@ -187,4 +187,49 @@ def kinetic_mean(data: 'SimulationData', steps: Optional['Type_Index'] = None, *
     return energy[index]
 
 
+def kinetic_turbulant(data: 'SimulationData', step: Optional['Type_Step'] = -1, *,
+                      mean: Optional['Type_Field'] = None, 
+                      start: Optional['Type_Step'] = None, stop: Optional['Type_Step'] = None, 
+                      skip: Optional[int] = None, scale : Optional[float] = None, 
+                      index = Optional['Type_Index'] = None, keepdims: bool = True) -> 'Type_Field':
+    """
+    Provides a method for calculation of the turbulant kinetic energy by 
+    consuming a SimulationData object and a either a mean field or a time 
+    interval specification to determine the mean field; must have 'fcx2', 
+    'fcy2' ('fcz2' if 3d) attributes in the SimulationData.fields object.
 
+    Attributes:
+        data: object containing relavent flash simulation output
+        step: time-like specification for which to process data, the key (optional)
+        mean: provide mean turbulant kinetic energy to avoid calculating it (optional)
+        start: used to determine the starting time-like specification, start key (optional)
+        stop: used to determine the ending time-like specification, stop key (optional)
+        skip: used to determine the sampling interval for the specification (optional)
+        scale: used to convert returned quantity to dimensional units (optional)
+        index: used for custom slicing operation; should be (blks, k, j, i) (optional)
+        keepdims: retain unused dimensions for broadcasting, else drop them (optional)
+
+    Note:
+        The mean kinetic energy is computed according to the formula
+
+                E(t)~ijk~ = (u(t)~ijk~^2^ + v(t)~ijk~^2^ + w(t)~ijk~^2^) - mean
+
+                *where the all terms are interpolated to cell centers*
+
+    Todo:
+
+    """
+    # need the dimensionality
+    dimension = data.geometry.grd_dim
+
+    # need to define slicing operators based on dims
+    if index is None:
+        i_all = slice(None)
+        index = (i_all, ) * 4 if (keepdims or dimension == 3) else (i_all, 0, i_all, i_all)
+
+    # retieve mean kinetic energy if not provided
+    if mean is None:
+        mean = kinetic_mean(data, start=start, stop=stop, skip=skip, index=index, keepdims=keepdims)
+
+    return kinetic(data, step, scale=scale, index=index, keepdims=keepdims) - mean
+                      

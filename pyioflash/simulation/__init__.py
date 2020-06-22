@@ -1,6 +1,6 @@
 """
-Python Module for providing methods to import
-and process FLASH4 HDF5 plt and chk files
+Python sub-package for providing methods to import
+and process simulation data; specfically, FLASH4 HDF5 files
 """
 
 # Used to import and handle simulation data
