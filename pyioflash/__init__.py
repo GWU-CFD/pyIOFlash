@@ -22,11 +22,6 @@ from pyioflash.postprocess import series
 #from pyioflash.visual import FigureOptions, PlotOptions, AnimationOptions
 #from pyioflash.visual import Plane
 
-# Used to post-process simulation data
-#from pyioflash.postprocess import energy
-#from pyioflash.postprocess import integral
-#from pyioflash.postprocess import time
-
 # Used to generate and pre-process simulation data
 
 

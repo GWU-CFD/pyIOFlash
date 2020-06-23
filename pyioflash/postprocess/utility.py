@@ -1,7 +1,7 @@
 """
 
 This module defines the utility methods and classes necessary for the 
-post-processing subpackage of pyioflash.
+post-processing subpackage of the pyioflash library.
 
 Todo:
     None
@@ -30,21 +30,18 @@ Type_Field  = 'ndarray'                         # defines a piece of field data
 Type_Series = Union[List[Type_Basic],           # defines time-series-like data
                     List['ndarray'], 'ndarray']
 Type_Data   = Union[Type_Field, Type_Series]    # defines either series or data
-
-
-# define type for flexable typing of source and element output
-Type_Output = Union[Type_Data, Output]
+Type_Output = Union[Type_Data, Output]          # define source and element output
 
 
 # define type for flexable typing of a source and sourceby object 
 Type_Source = Union[str, 'Sourceable', Type_Data]  
-Type_SourceBy = Union[Type_Slice, Iterable] # note 'step' consumes an iterable
-
+Type_SourceBy = Union[Type_Slice, Iterable]         
+Type_Stack = Union['Stackable', Tuple['Stackable']]
 
 # --- Define helper objects for providing flexable context attachemt ---
 # define named object which wraps context around sources and stack elements
-Sourceable = namedtuple('Sourceable', ['source', 'method', 'context'], defaults=['step', False)
-Stackable = namedtuple('Stackable', ['element', 'method', 'context'], defaults=['step', False])
+Sourceable = namedtuple('Sourceable', ['source', 'method', 'wrapped'], defaults=['step', False)
+Stackable = namedtuple('Stackable', ['element', 'method', 'wrapped'], defaults=['step', False])
 
 
 # define avalable methods to source data with a sourceby argument;
@@ -56,7 +53,7 @@ StackableMethods = {'step', 'series'}
 
 
 # define named objects which wrap context around source and element ouputs
-Ouput = namedtuple('Output', ['data', 'context', 'mapping'])
+Ouput = namedtuple('Output', ['data', 'context', 'mapping'], defaults=[{}, {}])
 
 
 # define helper method to construct a sources with context attached for later ingestion 
@@ -106,6 +103,27 @@ def make_stackable(element: Callable[..., Type_Output], args: Tuple[Any], *,
     # return context wrapped stackable element
     return Stackable(partial(element, *args, **options), method, context)
 
+# define an unwrapping factory for processing output
+def _make_unwrapper():
+    context, mapping, waswrap = {}, {}, False
+
+    def unwrapper(result):
+        def unwrap(result):
+            nonlocal context, mapping, waswrap
+            context, mapping, waswrap = result.context, result.mapping, True
+            return result.data
+        through = lambda result: result
+        wrapped = {True: unwrap, False: through}
+        return wrapped[isinstance(result, Output)](result)
+
+    def wrapper(result):
+        return Output(result, context, mapping) if waswrap else result
+
+    def refresh():
+        context, mapping, waswrap = {}, {}, False
+
+    return unwrapper, wrapper, refresh
+
 
 def _make_output(message: str, display: bool) -> Callable[[int], None]:
     """
@@ -153,38 +171,54 @@ def _ingest_source(source: Type_Source, sourceby: Type_SourceBy, *,
 
     """
 
-    output: Type_Series
+    # injest a source using a path and name
     if isinstance(source, str):
+        if not isinstance(path, DataPath):
+            Exception(f'Must provide a DataPath for named sources')
+        if sourceby is None:
+            sourceby = path.data.utility.indices()
         output = [data_from_path(path, times=time) for time in sourceby]
 
     # injest a Sourceable using sourceby
     elif type(source, Sourceable):
-        
-        # source uses a supported sourceby method
+
+        # using an available sourcing method
         if source.method in SourceByMethods:
 
-            
+            # source by steps of an iterable
             if source.method == 'step'
+
+                # try to fill in steps from path
+                if sourceby is None:
+                    if not isinstance(path, DataPath):
+                        Exception(f'Must provide a DataPath for step method sources when sourceby is None!')
+                    sourceby = path.data.utility.indices()
+            
                 output = [source.source(step) for step in sourceby]
 
-            elif type(sourceby) is in (SourceBySlice, SourceByIterable):
+            # source by other available methods
+            else:
+
+                # try to fill in sourceby if able
+                if sourceby is None:
+                    if source.method == 'slice':
+                        sourceby = slice(None)
+                    else:
+                        Exception(f'Cannot automatically generate sourceby for choosen source.method!')
+
                 output = source.source(sourceby)
 
-            # not sure how to process source with provided sourceby
-            else:
-                Exception(f'Provided source and sourceby are not compatible!')
-
-        # injestion of source by provided method not supported       
+        # Unable to injest source with provided method
         else:
             Exception(f'Provided source.method not supported!')
 
     # provided source is directly usable as output
     elif type(source, ndarray) or type(source, list):
-        if type(source[0]) is not in (float, ndarray):
+        if type(source[0]) is not in (str, int, float, ndarray):
             Exception(f'Provided source appears to be a collection, but cannot be used!')
         output = source
 
-    # not supported source type
+    # not able to injest source with provided information
     else:
         Exception(f'Cannot work with provided source!')
 
