@@ -11,7 +11,7 @@ This module currently defines the following methods:
 Todo:
 
 """
-from typing import Optional
+from typing import Tuple, Union, Iterable, Optional, TYPE_CHECKING
 
 import numpy
 
@@ -20,9 +20,9 @@ if TYPE_CHECKING:
     from pyioflash.simulation.data import SimulationData
 
 
-def integral_space(data: 'SimulationData', field: 'numpy.ndarray', *, 
-                   differential: bool = True, scale: Optional[float] = None, 
-                   face: str = "center") -> float:
+def space(data: 'SimulationData', field: 'numpy.ndarray', *, 
+          differential: bool = True, scale: Optional[float] = None, 
+          face: str = "center") -> float:
     """
     Provides a method for calculation of the volumetric integral of a field by 
     consuming a SimulationData object; may provide either named field or array.
@@ -74,12 +74,12 @@ def integral_space(data: 'SimulationData', field: 'numpy.ndarray', *,
     return numpy.sum(field * deltaV)
 
 
-def integral_space_single(data: 'SimulationData', field: 'numpy.ndarray', *,
-                          axis: Union[str, int] = 1, 
-                          layout: Tuple[str] = ('b', 'z', 'y', 'x'),
-                          differential: bool = True, scale: Optional[float] = None,
-                          face: str = "center",
-                          contract: bool = False) -> float:
+def space_single(data: 'SimulationData', field: 'numpy.ndarray', *,
+                 axis: Union[str, int] = 1, 
+                 layout: Tuple[str] = ('b', 'z', 'y', 'x'),
+                 differential: bool = True, scale: Optional[float] = None,
+                 face: str = "center",
+                 contract: bool = False) -> float:
     """
     Provides a method for calculation of the volumetric integral of a field by 
     consuming a SimulationData object; ...
@@ -102,7 +102,7 @@ def integral_space_single(data: 'SimulationData', field: 'numpy.ndarray', *,
     # define axis and identify index to perform integration 
     mapping = {ax: layout.index(ax) for ax in layout}
     index = mapping.get(axis, axis)
-    if index >= len(mapping) not isinstance(index, int):
+    if index >= len(mapping) or not isinstance(index, int):
         Exception(f'Chosen axis is outside of provided or default layout!')
     if layout[index] not in {'x', 'y', 'z'} and differential:
         Exception(f'Chosen axis is not available in geometry data!')
@@ -124,9 +124,9 @@ def integral_space_single(data: 'SimulationData', field: 'numpy.ndarray', *,
 
 
 
-def integral_time(data: 'SimulationData', field: 'Series', *,
-                  [Iterable, slice, None], differential : bool = True, scale : Union[None, float] = None, 
-                  method : str = "center", times : Union[None, Iterable] = None) -> Union[float, numpy.ndarray]:
+def time(data: 'SimulationData', field: 'Series', *,
+         steps = [Iterable, slice, None], differential : bool = True, scale : Union[None, float] = None, 
+         method : str = "center", times : Union[None, Iterable] = None) -> Union[float, numpy.ndarray]:
     """
     Provides a method for calculation of the temporal integral of a field or scalar by 
     consuming a SimulationData object; may provide either named field or array.
@@ -159,9 +159,11 @@ def integral_time(data: 'SimulationData', field: 'Series', *,
         # get times using keys, then calc widths
         #   not in one step as keys may not be int
         time = data.scalars['t'][:][0]
-        keys = times if times is not None else range(len(time))
+        keys = times if times is not None else range(len(field))
         taus = [time[key] for key in keys]
         dt = [right - left for right, left in zip(taus[1:], taus[:-1])]
+        dt = numpy.array(dt)[(slice(None), ) + (numpy.newaxis, ) * (len(field.shape)-1)]
+
 
     # use constant weights
     else:

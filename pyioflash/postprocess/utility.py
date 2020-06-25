@@ -8,12 +8,16 @@ Todo:
 
 """
 
-from typing import Any, Tuple, List, Dict, Union, Callable, TYPE_CHECKING
+from typing import Any, Tuple, List, Dict, Iterable, Union, Callable, TYPE_CHECKING
+from collections import namedtuple
+from functools import partial
 from sys import stdout
+
+from numpy import array
 
 if TYPE_CHECKING:
     from numpy import ndarray
-    from pyioflash.simulation.data import SimulationData
+    from pyioflash.simulation import SimulationData, DataPath
 
 
 # --- Define Types for static analysis ---
@@ -30,7 +34,7 @@ Type_Field  = 'ndarray'                         # defines a piece of field data
 Type_Series = Union[List[Type_Basic],           # defines time-series-like data
                     List['ndarray'], 'ndarray']
 Type_Data   = Union[Type_Field, Type_Series]    # defines either series or data
-Type_Output = Union[Type_Data, Output]          # define source and element output
+Type_Output = Union[Type_Data, 'Output']          # define source and element output
 
 
 # define type for flexable typing of a source and sourceby object 
@@ -38,9 +42,10 @@ Type_Source = Union[str, 'Sourceable', Type_Data]
 Type_SourceBy = Union[Type_Slice, Iterable]         
 Type_Stack = Union['Stackable', Tuple['Stackable']]
 
+
 # --- Define helper objects for providing flexable context attachemt ---
 # define named object which wraps context around sources and stack elements
-Sourceable = namedtuple('Sourceable', ['source', 'method', 'wrapped'], defaults=['step', False)
+Sourceable = namedtuple('Sourceable', ['source', 'method', 'wrapped'], defaults=['step', False])
 Stackable = namedtuple('Stackable', ['element', 'method', 'wrapped'], defaults=['step', False])
 
 
@@ -57,7 +62,7 @@ Ouput = namedtuple('Output', ['data', 'context', 'mapping'], defaults=[{}, {}])
 
 
 # define helper method to construct a sources with context attached for later ingestion 
-def make_sourcable(source: Callable[..., Type_Output], args: Tuple[Any], *,
+def make_sourceable(source: Callable[..., Type_Output], args: Tuple[Any], *,
                    method: str = 'step', context: bool = False,
                    options: Dict[str, Any] = {}) -> Sourceable:         
     """
@@ -77,12 +82,12 @@ def make_sourcable(source: Callable[..., Type_Output], args: Tuple[Any], *,
         args = (args, )
 
     # return context wrapped sourcing function
-    return Sourcable(partial(source, *args, **options), method)
+    return Sourceable(partial(source, *args, **options), method)
 
 
 # define helper methods to construct elements with context attached for later stacking
 def make_stackable(element: Callable[..., Type_Output], args: Tuple[Any], *,
-                   method: str = 'step', context: bool = False:
+                   method: str = 'step', context: bool = False,
                    options: Dict[str, Any] = {}) -> Stackable:
     """
     Provides a helper method to construct elements with attached 
@@ -105,19 +110,19 @@ def make_stackable(element: Callable[..., Type_Output], args: Tuple[Any], *,
 
 # define an unwrapping factory for processing output
 def _make_unwrapper():
-    context, mapping, waswrap = {}, {}, False
+    context, mapping, filed = {}, {}, False
 
     def unwrapper(result):
         def unwrap(result):
-            nonlocal context, mapping, waswrap
-            context, mapping, waswrap = result.context, result.mapping, True
+            nonlocal context, mapping, filed
+            context, mapping, filed = result.context, result.mapping, True
             return result.data
         through = lambda result: result
         wrapped = {True: unwrap, False: through}
-        return wrapped[isinstance(result, Output)](result)
+        return wrapped[isinstance(result, Output) and not filed](result)
 
     def wrapper(result):
-        return Output(result, context, mapping) if waswrap else result
+        return Output(result, context, mapping) if filed else result
 
     def refresh():
         context, mapping, waswrap = {}, {}, False
@@ -154,7 +159,7 @@ def _make_output(message: str, display: bool) -> Callable[[int], None]:
 
 
 def _ingest_source(source: Type_Source, sourceby: Type_SourceBy, *, 
-                   path: DataPath = None) -> Type_Series:
+                   path: 'DataPath' = None) -> Type_Series:
     """
     Method (internal) provided to handle ingesting a source and returning
     an output suitable for use in a series method.
@@ -180,13 +185,13 @@ def _ingest_source(source: Type_Source, sourceby: Type_SourceBy, *,
         output = [data_from_path(path, times=time) for time in sourceby]
 
     # injest a Sourceable using sourceby
-    elif type(source, Sourceable):
+    elif type(source) == Sourceable:
 
         # using an available sourcing method
         if source.method in SourceByMethods:
 
             # source by steps of an iterable
-            if source.method == 'step'
+            if source.method == 'step':
 
                 # try to fill in steps from path
                 if sourceby is None:
@@ -213,8 +218,8 @@ def _ingest_source(source: Type_Source, sourceby: Type_SourceBy, *,
             Exception(f'Provided source.method not supported!')
 
     # provided source is directly usable as output
-    elif type(source, ndarray) or type(source, list):
-        if type(source[0]) is not in (str, int, float, ndarray):
+    elif type(source) == ndarray or type(source) == list:
+        if type(source[0]) not in (str, int, float, ndarray):
             Exception(f'Provided source appears to be a collection, but cannot be used!')
         output = source
 
@@ -222,7 +227,7 @@ def _ingest_source(source: Type_Source, sourceby: Type_SourceBy, *,
     else:
         Exception(f'Cannot work with provided source!')
 
-    return output
+    return array(output)
 
 
 def _interpolate_ftc(field: Type_Field, axis: int, guards: int, dimension: int, *, 

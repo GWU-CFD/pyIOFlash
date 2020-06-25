@@ -14,4 +14,4 @@ from pyioflash.postprocess.elements import integral
 #from pyioflash.postprocess.elements import relative 
 
 # Used to provide most simple time-series like analysis
-from pyioflash.postprocess.analysis import series
+from pyioflash.postprocess.analyses import series

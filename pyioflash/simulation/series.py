@@ -19,7 +19,7 @@ Todo:
 
 from dataclasses import dataclass, field
 from collections import namedtuple
-from typing import List, Iterable, Union, Any, TYPE_CHECKING
+from typing import List, Iterable, Union, Any, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from numpy import ndarray
@@ -30,9 +30,9 @@ DataPath = namedtuple('DataPath', ['data', 'module', 'type', 'name'], defaults=[
 
 
 def data_from_path(path: DataPath, *,
-                   index: Optional[Iterable, slice, int] = None,
+                   index: Optional[Union[Iterable, slice, int]] = None,
                    times: Union[slice, float, int] = None
-                   ) -> Union[str int, float, 'ndarray']:
+                   ) -> Union[str, int, float, 'ndarray']:
     """
     """
     

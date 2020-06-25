@@ -5,6 +5,6 @@ methods to conduct time-series and permutation analysis.
 """
 
 # Used to provide most simple time-series like analysis 
-from pyioflash.postprocess.analysis import series
+from pyioflash.postprocess.analyses import series
 
 #### Define other sub-sub-package modules as analyses ###

@@ -15,9 +15,9 @@ Todo:
 """
 from typing import Optional, TYPE_CHECKING 
 
-from pyioflash.postprocess.utility import _interpolate_ftc
+from pyioflash.postprocess.utility import _interpolate_ftc, make_sourceable, make_stackable
 from pyioflash.postprocess.elements import integral
-from pyioflash.postprocess.analysis import series
+from pyioflash.postprocess.analyses import series
 
 if TYPE_CHECKING:
     from pyioflash.simulation.data import SimulationData
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 
 def thermal(data: 'SimulationData', step: 'Type_Step' = -1, *,
-            scale: Optional[float] = None, index = Optional['Type_Index'] = None,
+            scale: Optional[float] = None, index: Optional['Type_Index'] = None,
             keepdims: bool = True) -> 'Type_Field':
     """
     Provides a method for calculation of the thermal energy by 
@@ -73,7 +73,7 @@ def thermal(data: 'SimulationData', step: 'Type_Step' = -1, *,
 
 
 def kinetic(data: 'SimulationData', step: 'Type_Step' = -1, *,
-            scale : Optional[float] = None, index = Optional['Type_Index'] = None,
+            scale : Optional[float] = None, index: Optional['Type_Index'] = None,
             keepdims: bool = True) -> 'Type_Field':
     """
     Provides a method for calculation of the total kinetic energy by 
@@ -128,7 +128,7 @@ def kinetic(data: 'SimulationData', step: 'Type_Step' = -1, *,
 def kinetic_mean(data: 'SimulationData', steps: Optional['Type_Index'] = None, *,
                  start: Optional['Type_Step'] = None, stop: Optional['Type_Step'] = None, 
                  skip: Optional[int] = None, scale : Optional[float] = None, 
-                 index = Optional['Type_Index'] = None, keepdims: bool = True) -> 'Type_Field':
+                 index: Optional['Type_Index'] = None, keepdims: bool = True) -> 'Type_Field':
     """
     Provides a method for calculation of the mean or time-averaged kinetic energy by 
     consuming a SimulationData object and a time interval specification; 
@@ -177,7 +177,8 @@ def kinetic_mean(data: 'SimulationData', steps: Optional['Type_Index'] = None, *
 
     # use time series analysis to retreve mean kinetic energy
     source = make_sourceable(source=kinetic, args=data, method='step', context=False)
-    stack = make_stackable(element=integral.time, args=data, method='series', context=False)
+    stack = make_stackable(element=integral.time, args=data, method='series', context=False,
+                           options={'times': steps})
     energy = series.simple(source=source, sourceby=times, stack=stack) 
 
     # apply a dimensional scale
@@ -191,7 +192,7 @@ def kinetic_turbulant(data: 'SimulationData', step: Optional['Type_Step'] = -1, 
                       mean: Optional['Type_Field'] = None, 
                       start: Optional['Type_Step'] = None, stop: Optional['Type_Step'] = None, 
                       skip: Optional[int] = None, scale : Optional[float] = None, 
-                      index = Optional['Type_Index'] = None, keepdims: bool = True) -> 'Type_Field':
+                      index: Optional['Type_Index'] = None, keepdims: bool = True) -> 'Type_Field':
     """
     Provides a method for calculation of the turbulant kinetic energy by 
     consuming a SimulationData object and a either a mean field or a time 
