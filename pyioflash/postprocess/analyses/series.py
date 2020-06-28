@@ -4,7 +4,7 @@
 
 
 from typing import Optional, TYPE_CHECKING
-from pyioflash.postprocess.utility import _ingest_source, _make_unwrapper
+from pyioflash.postprocess.utility import StackableMethods, Output, _ingest_source, _make_unwrapper
 
 if TYPE_CHECKING:
     from pyioflash.postprocess.utility import Type_Source, Type_Sourceby, Type_Stack, Type_Output
@@ -16,7 +16,11 @@ def simple(source: 'Type_Source', sourceby: Optional['Type_SourceBy'] = None,
            stack: Optional['Type_Stack'] = None, *, 
            path: Optional['DataPath'] = None) -> 'Type_Output':
     """
+
+
     """
+    # specify supported methods
+    methods = StackableMethods
 
     # injest source from provided information 
     result = _ingest_source(source, sourceby, path=path)
@@ -28,25 +32,47 @@ def simple(source: 'Type_Source', sourceby: Optional['Type_SourceBy'] = None,
         if type(stack) is not tuple:
             stack = (stack, )
 
-        # Operate on source by each element in the stack
+        # Operate on source result by each element in the stack in turn
         unwrap, rewrap, refresh = _make_unwrapper()
         for item in stack:
 
-            # unwrap each and apply stack method before rewrapping
-            if item.method == 'step':
+            # unwrap each and apply stack method by piece part before rewrapping the whole
+            if item.method == 'part':
+
+                # refesh factory context
                 refresh()
-                result = rewrap([unwrap(item.element(part, 
-                                                     **{result.mapping[option]: value 
-                                                        for option, value in result.context.items()
-                                                        if option in result.mapping}))
-                                 for part in result.data]) 
 
-            elif item.method == 'series':
-                result = item.element(result)
+                # need to pass context to element if previous element provided wrapped output
+                if isinstance(result, Output):
+                    refresh()
+                    result = rewrap([unwrap(item.element(part, 
+                                                         **{result.mapping[option]: value 
+                                                            for option, value in result.context.items()
+                                                            if option in result.mapping}))
+                                     for part in result.data]) 
 
+                # no context provided for previous element output
+                else:
+                    result = rewrap([unwrap(item.element(part))
+                                     for part in result.data])
+
+            # operate on the previous result as a whole with current element
+            elif item.method == 'whole':
+
+                # need to pass context to element if previous element provided wrapped output
+                if isinstance(result, Output):
+                    result = item.element(result,
+                                          **{result.mapping[option]: value
+                                             for option, value in result.context.items()
+                                             if option in result.mapping})
+
+                # no context provided for previous element output
+                else:
+                    result = item.element(result)
+
+            # Unkown method of stack operation provided
             else:
-                Exception(f'Stack element method of operation not supported!')
-
+                raise ValueError(f"Unsupported method of operation '{method}'; must specify {methods}!")
 
     return result
 

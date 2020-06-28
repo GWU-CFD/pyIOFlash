@@ -13,7 +13,7 @@ Full package documentation can be found at the GitHub Pages for pyIOFlash_.
 .. _pyIOFlash: https://pyioflash.readthedocs.io
 
 :Authors:	Aaron Lentner, Akash Dhruv
-:Revision:	1.0.44 (pre-alpha)
+:Revision:	1.0.51 (pre-alpha)
 
 *Needed Feature List*
 
@@ -41,7 +41,7 @@ Quick Reference
   data = SimulationData.from_list(range(20), path='../out/',
                                   header='INS_LidDr_Cavity_hdf5_plt_cnt_')
 
-  data.fields[20.0 : 60.0 : 2]['temp', 'pres'][:, :, :, :, :]
+  data.fields[20.0 : 60.0 : 2]['temp', 'pres'][:, :, :, :, :][:]
 
 
 *Reference*

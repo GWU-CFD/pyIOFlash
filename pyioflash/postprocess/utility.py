@@ -8,12 +8,15 @@ Todo:
 
 """
 
+
 from typing import Any, Tuple, List, Dict, Iterable, Union, Callable, TYPE_CHECKING
 from collections import namedtuple
 from functools import partial
 from sys import stdout
 
+
 from numpy import array
+
 
 if TYPE_CHECKING:
     from numpy import ndarray
@@ -45,8 +48,8 @@ Type_Stack = Union['Stackable', Tuple['Stackable']]
 
 # --- Define helper objects for providing flexable context attachemt ---
 # define named object which wraps context around sources and stack elements
-Sourceable = namedtuple('Sourceable', ['source', 'method', 'wrapped'], defaults=['step', False])
-Stackable = namedtuple('Stackable', ['element', 'method', 'wrapped'], defaults=['step', False])
+Sourceable = namedtuple('Sourceable', ['source', 'method'], defaults=['step'])
+Stackable = namedtuple('Stackable', ['element', 'method'], defaults=['part'])
 
 
 # define avalable methods to source data with a sourceby argument;
@@ -54,27 +57,35 @@ SourceByMethods = {'step', 'slice', 'iterable'}
 
 
 # define available methods for how elements may operate on stack data       
-StackableMethods = {'step', 'series'}
+StackableMethods = {'part', 'whole'}
 
 
 # define named objects which wrap context around source and element ouputs
-Ouput = namedtuple('Output', ['data', 'context', 'mapping'], defaults=[{}, {}])
+Output = namedtuple('Output', ['data', 'context', 'mapping'], defaults=[{}, {}])
 
 
 # define helper method to construct a sources with context attached for later ingestion 
 def make_sourceable(source: Callable[..., Type_Output], args: Tuple[Any], *,
-                   method: str = 'step', context: bool = False,
-                   options: Dict[str, Any] = {}) -> Sourceable:         
+                    method: str = 'step', options: Dict[str, Any] = {}) -> Sourceable:         
     """
     Provides a helper method to construct sources with attached 
     context for use in ingestion in the analysis modules.
 
     Attributes:
         source: function which produces data on which to operate
-        args: positional arguments to attach to sourcing function
+        args: positional arguments to attach to sourcing function 
         method: how will the source consume the sourceby passed to it (optional)
-        context: whether or not source returns context wrapped output (optional)
         options: keyword arguments to attach to sourcing function (optional)
+
+    Notes:
+
+        If more than one positional or keyword argument is needed, args and options 
+        must be a tuple and dictionary respectivly; for example,
+            make_sourcable(source, (arg1, arg2, arg3), method=method, 
+                           options={'key1': val1, 'key2': val2, 'key3': val3})
+
+    Todo:
+
     """
 
     # make a tuple out of args if single provided
@@ -87,8 +98,7 @@ def make_sourceable(source: Callable[..., Type_Output], args: Tuple[Any], *,
 
 # define helper methods to construct elements with context attached for later stacking
 def make_stackable(element: Callable[..., Type_Output], args: Tuple[Any], *,
-                   method: str = 'step', context: bool = False,
-                   options: Dict[str, Any] = {}) -> Stackable:
+                   method: str = 'part', options: Dict[str, Any] = {}) -> Stackable:
     """
     Provides a helper method to construct elements with attached 
     context for use in constructing a stack for the analysis modules.
@@ -97,8 +107,17 @@ def make_stackable(element: Callable[..., Type_Output], args: Tuple[Any], *,
         element: function which operates on data and returns modified results
         args: positional arguments to attach to stackable element
         method: how will the element operate on the data in the stack (optional)
-        context: whether or not element returns context wrapped output (optional)
         options: keyword arguments to attach to stackable element (optional)
+
+    Notes:
+
+        If more than one positional or keyword argument is needed, args and options 
+        must be a tuple and dictionary respectivly; for example,
+            make_sourcable(source, (arg1, arg2, arg3), method=method, 
+                           options={'key1': val1, 'key2': val2, 'key3': val3})
+
+    Todo:
+
     """
 
     # make a tuple out of args if single provided
@@ -106,7 +125,8 @@ def make_stackable(element: Callable[..., Type_Output], args: Tuple[Any], *,
         args = (args, )
     
     # return context wrapped stackable element
-    return Stackable(partial(element, *args, **options), method, context)
+    return Stackable(partial(element, *args, **options), method)
+
 
 # define an unwrapping factory for processing output
 def _make_unwrapper():

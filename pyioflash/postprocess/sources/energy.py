@@ -13,11 +13,15 @@ This module currently defines the following methods:
 Todo:
 
 """
-from typing import Optional, TYPE_CHECKING 
 
-from pyioflash.postprocess.utility import _interpolate_ftc, make_sourceable, make_stackable
+
+from typing import Dict, Optional, Union, TYPE_CHECKING 
+
+
+from pyioflash.postprocess.utility import _interpolate_ftc, make_sourceable, make_stackable, Output
 from pyioflash.postprocess.elements import integral
 from pyioflash.postprocess.analyses import series
+
 
 if TYPE_CHECKING:
     from pyioflash.simulation.data import SimulationData
@@ -54,6 +58,7 @@ def thermal(data: 'SimulationData', step: 'Type_Step' = -1, *,
         Need to implement dimensionality
 
     """
+
     # need the dimensionality
     dimension = data.geometry.grd_dim
 
@@ -101,6 +106,7 @@ def kinetic(data: 'SimulationData', step: 'Type_Step' = -1, *,
     Todo:
 
     """
+
     # need the dimensionality
     dimension = data.geometry.grd_dim
 
@@ -125,10 +131,11 @@ def kinetic(data: 'SimulationData', step: 'Type_Step' = -1, *,
     return energy[index]
 
 
-def kinetic_mean(data: 'SimulationData', steps: Optional['Type_Index'] = None, *,
-                 start: Optional['Type_Step'] = None, stop: Optional['Type_Step'] = None, 
-                 skip: Optional[int] = None, scale : Optional[float] = None, 
-                 index: Optional['Type_Index'] = None, keepdims: bool = True) -> 'Type_Field':
+def kinetic_mean(data: 'SimulationData', steps: Optional['Type_Index'] = slice(None), *,
+                 start: Optional['Type_Step'] = None, stop: Optional['Type_Step'] = None, skip: Optional[int] = None,
+                 wrapped: bool = False, mapping: Dict[str, str] = {},
+                 scale : Optional[float] = None, index: Optional['Type_Index'] = None, 
+                 keepdims: bool = True) -> Union['Type_Field', Output]:
     """
     Provides a method for calculation of the mean or time-averaged kinetic energy by 
     consuming a SimulationData object and a time interval specification; 
@@ -140,6 +147,8 @@ def kinetic_mean(data: 'SimulationData', steps: Optional['Type_Index'] = None, *
         start: used to determine the starting time-like specification, start key (optional)
         stop: used to determine the ending time-like specification, stop key (optional)
         skip: used to determine the sampling interval for the specification (optional)
+        wrapped: whether to wrap context around result of sourcing (optional)
+        mapping: if wrapped, how to map context to options of the next operation (optional)
         scale: used to convert returned quantity to dimensional units (optional)
         index: used for custom slicing operation; should be (blks, k, j, i) (optional)
         keepdims: retain unused dimensions for broadcasting, else drop them (optional)
@@ -150,6 +159,9 @@ def kinetic_mean(data: 'SimulationData', steps: Optional['Type_Index'] = None, *
                 E(t)~ijk~ = $\sum_{$\tau$=t~0~}^{t} (u($\tau$)~ijk~^2^ + v($\tau)~ijk~^2^ + w($tau$)~ijk~^2^) / N
                 
                 *where the all terms are interpolated to cell centers*
+
+        This function does not generate any dynamic context; this even if wrapping is desired and specified, the
+        mapping attribute is ignored.
 
     Todo:
 
@@ -164,28 +176,24 @@ def kinetic_mean(data: 'SimulationData', steps: Optional['Type_Index'] = None, *
         index = (i_all, ) * 4 if (keepdims or dimension == 3) else (i_all, 0, i_all, i_all)
 
     # use provided information to source times
-    if steps is None:
-        times = data.utility.indices(slice(start, stop, step)) 
-
-    # use provided slice to source times
-    elif isinstance(steps, slice):
-        times = data.utility.indices(steps)
-
-    # try steps; it should be an iterable
-    else:
-        times = steps
+    times = data.utility.times(steps)
+    steps = data.utility.indices(steps)
 
     # use time series analysis to retreve mean kinetic energy
-    source = make_sourceable(source=kinetic, args=data, method='step', context=False)
-    stack = make_stackable(element=integral.time, args=data, method='series', context=False,
-                           options={'times': steps})
-    energy = series.simple(source=source, sourceby=times, stack=stack) 
+    source = make_sourceable(source=kinetic, args=data, method='step')
+    stack = make_stackable(element=integral.time, args=data, method='whole', options={'times': times})
+    energy = series.simple(source=source, sourceby=steps, stack=stack) 
 
     # apply a dimensional scale
     if scale is not None:
         energy = energy * scale
 
-    return energy[index]
+    # index results if desired
+    energy = energy[index]
+
+    # wrap result of integration if desired (no context to provide)
+    wrap = {True: lambda source: Output(source), False: lambda source: source} 
+    return wrap[wrapped](energy)
 
 
 def kinetic_turbulant(data: 'SimulationData', step: Optional['Type_Step'] = -1, *,

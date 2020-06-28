@@ -5,42 +5,58 @@ subpackage of the pyioflash library; part of the Stackable set of routines.
 
 This module currently defines the following methods:
 
-    spacial  -> perform simple spacial integration
-    temporal -> perform simple temporal integration
+    space   -> perform simple spatial integration
+    time    -> perform simple temporal integration
 
 Todo:
+    work on single and double spatial integration
 
 """
-from typing import Tuple, Union, Iterable, Optional, TYPE_CHECKING
+
+
+from typing import Tuple, Dict, Union, Iterable, Optional, TYPE_CHECKING
+
 
 import numpy
 
+from pyioflash.postprocess.utility import Output
+
+
 if TYPE_CHECKING:
-    from numpy import ndarray
     from pyioflash.simulation.data import SimulationData
+    from pyioflash.postprocess.utility import Type_Field, Type_Output, Type_Index 
 
 
-def space(data: 'SimulationData', field: 'numpy.ndarray', *, 
-          differential: bool = True, scale: Optional[float] = None, 
-          face: str = "center") -> float:
+def space_full(data: 'SimulationData', field: 'Type_Field', *, 
+               face: str = 'center',
+               differential: bool = True, 
+               wrapped: bool = False, mapping: Dict[str, str] = {},
+               scale: Optional[float] = None, index: Optional['Type_Index'] = None, 
+               keepdims: bool = True) -> 'Type_Output':
     """
     Provides a method for calculation of the volumetric integral of a field by 
-    consuming a SimulationData object; may provide either named field or array.
+    consuming a SimulationData object; ...
 
     Attributes:
         data: object containing relavent flash simulation output
         field: numpy array for which to perform integration; [b, ...]
-        differential: whether to use the volume elements of integration (optional)
         face: which grid face to perform integration over [left, center, right] (optional)
+        differential: whether to use the volume elements of integration (optional)
+        wrapped: whether to wrap context around result of integration (optional)
+        mapping: if wrapped, how to map context to options of the next operation (optional)
         scale: used to convert returned quantity to dimensional units (optional)
+        index: used for custom slicing operation; should be (blks, k, j, i) (optional)
+        keepdims: input field has retained unused dimensions for broadcasting, else were dropped (optional)
 
     Note:
         The total kinetic energy is computed according to the formula
 
                 sum( field{ijk} dV{ijk} ) over all ijk
 
+        This function does not generate any dynamic context; this even if wrapping is desired and specified, the
+        mapping attribute is ignored.
+
     Todo:
-        Need to thow if step is type(slice)
 
     """
 
@@ -48,38 +64,45 @@ def space(data: 'SimulationData', field: 'numpy.ndarray', *,
     dimension = data.geometry.grd_dim
 
     # need to define slicing operators based on dims
-    i_zax = slice(None) if dimension == 3 else 0
+    i_zax = slice(None) if (keepdims or dimension == 3) else 0
     i_all = slice(None)
+    if index is None:
+        index = (i_all, ) * (4 if (keepdims or dimension == 3) else 3)
 
     # calculate volume elements
     if differential:
         # need to define grid face to compute volume elements 
-        i_cnt = {"left" : 0, "center" : 1, "right" : 2}[face]
+        i_grd = {"left" : 0, "center" : 1, "right" : 2}[face]
 
         # retrieve cell centered grid metrics
-        ddxc : numpy.ndarray = data.geometry.grd_mesh_ddx[(i_cnt, i_all, i_zax, i_all, i_all)]
-        ddyc : numpy.ndarray = data.geometry.grd_mesh_ddy[(i_cnt, i_all, i_zax, i_all, i_all)]
+        ddxc = data.geometry.grd_mesh_ddx[(i_grd, i_all, i_zax, i_all, i_all)]
+        ddyc = data.geometry.grd_mesh_ddy[(i_grd, i_all, i_zax, i_all, i_all)]
     
         # initialize volume element
         deltaV = 1/ddxc * 1/ddyc
         if dimension == 3:
-            ddzc : numpy.ndarray = data.geometry.grd_mesh_ddz[(i_cnt, i_all, i_zax, i_all, i_all)]
-            deltaV = dv * 1/ddzc
+            ddzc = data.geometry.grd_mesh_ddz[(i_grd, i_all, i_zax, i_all, i_all)]
+            deltaV = deltaV * 1/ddzc
 
     # use constant weights
     else:
         deltaV = 1.0
 
-    # perform integration and provide result
-    return numpy.sum(field * deltaV)
+    # perform integration and index the result
+    integral = numpy.sum(field * deltaV)[index]
+
+    # wrap result of integration if desired (no context to provide)
+    wrap = {True: lambda integral: Output(integral), False: lambda integral: integral} 
+    return wrap[wrapped](integral)
 
 
-def space_single(data: 'SimulationData', field: 'numpy.ndarray', *,
-                 axis: Union[str, int] = 1, 
-                 layout: Tuple[str] = ('b', 'z', 'y', 'x'),
-                 differential: bool = True, scale: Optional[float] = None,
-                 face: str = "center",
-                 contract: bool = False) -> float:
+def space_single(data: 'SimulationData', field: 'Type_Field', *,
+                 face: str = 'center', 
+                 axis: Union[str, int] = 1, layout: Tuple[str] = ('b', 'z', 'y', 'x'),
+                 differential: bool = True, 
+                 wrapped: bool = False, mapping: Dict[str, str] = {},
+                 scale: Optional[float] = None, index: Optional['Type_Index'] = None,
+                 keepdims: bool = False) -> 'Type_Output':
     """
     Provides a method for calculation of the volumetric integral of a field by 
     consuming a SimulationData object; ...
@@ -87,15 +110,20 @@ def space_single(data: 'SimulationData', field: 'numpy.ndarray', *,
     Attributes:
         data: object containing relavent flash simulation output
         field: numpy array for which to perform integration; [blocks, ...]
+        face: which grid face to perform integration over [left, center, right] (optional)
         axis: which axis to integrate; can supply label and assiciated layout (optional)
         layout: indexable object containing the labeled dimentions of field (optional)
         differential: whether to use the volume elements of integration (optional)
-        face: which grid face to perform integration over [left, center, right] (optional)
+        wrapped: whether to wrap context around result of integration (optional)
+        mapping: if wrapped, how to map context to options of the next operation (optional)
         scale: used to convert returned quantity to dimensional units (optional)
+        index: used for custom slicing operation; should be (blks, k, j, i) (optional)
+        keepdims: input field has retained unused dimensions for broadcasting, else were dropped (optional)
 
     Note:
 
     Todo:
+        need to perform a reduction operation and a renumbering of the blocks
 
     """
 
@@ -122,78 +150,127 @@ def space_single(data: 'SimulationData', field: 'numpy.ndarray', *,
     return numpy.sum(field * deltaV, index)
 
 
-
-
-def time(data: 'SimulationData', field: 'Series', *,
-         steps = [Iterable, slice, None], differential : bool = True, scale : Union[None, float] = None, 
-         method : str = "center", times : Union[None, Iterable] = None) -> Union[float, numpy.ndarray]:
+def time(data: 'SimulationData', fields: 'Type_Output', *,
+         method : str = 'center', 
+         differential : bool = True,
+         wrapped: bool = False, mapping: Dict[str, str] = {},
+         scale : Optional[float] = None, steps: Optional['Type_Index'] = None, 
+         starting: Union[int, float] = 0, times: Optional['Type_Index'] = None,
+         force_steps: bool = False) -> 'Type_Output':
     """
-    Provides a method for calculation of the temporal integral of a field or scalar by 
-    consuming a SimulationData object; may provide either named field or array.
+    Provides a method for calculation of the temporal integral of fields or scalars by 
+    consuming a SimulationData object and provided fields
 
     Attributes:
         data: object containing relavent flash simulation output
-        field: named field or list of numpy arrays of floats for which to perform integration
-        steps: time-like specification over which to process data (keys)
-        differential: whether to use the temporal elements of integration (optional) 
-        scale: used to convert returned quantity to dimensional units (optional)
+        fields: (list of) numpy arrays or floats/ints over which to perform integration
         method: choice of method of integration [left, center, right] (optional)
+        differential: whether to use the temporal elements of integration (optional) 
+        wrapped: whether to wrap context around result of integration (optional)
+        mapping: if wrapped, how to map context to options of the next operation (optional)
+        scale: used to convert returned quantity to dimensional units (optional)
+        steps: time-like specification over which to process provided data (optional)
+        starting: if data and fields are not aligned; provides a shift to align (optional)
         times: use different time-like specification of looking up temporal elements of integration (optional)
+        force_steps: force the treatment of steps as an Iterable; needed for len(steps) < len(fields) (optional)
 
     Note:
         The total kinetic energy is computed according to the formula
 
                 sum( field{t} dt{t} ) over all t
 
+
+        If steps is an Iterable of slices the optional attibute times must be provided if the provided field
+        is not aligned to the entries in the provided data object.
+
+        If steps is provided (either as a slice or an Iterable), elements must be integers; specification using 
+        floats is not yet supported and will result in runtime error.
+
+        This function does not generate any dynamic context; this even if wrapping is desired and specified, the
+        mapping attribute is ignored.
+
     Todo:
-        Need to thow if field is not understood type
-        Need to thow if method is not implemented
         Need to implement simpsons rule 
         Need to implement gaussian quadrature
         
     """
-    
+
+    # specify supported methods
+    methods = {'center', 'left', 'right'}
+
+    # strip context if was provided
+    if isinstance(fields, Output):
+        fields = fields.data
+
+    # catch inappropriate specification for steps; if not could result in undetected issues
+    if steps is not None and not (isinstance(steps, slice) or isinstance(steps, Iterable)):
+        raise TypeError(f"Unsupported type '{type(steps).__name__}' provided for steps, must be 'slice' of 'Iterable'") 
+
+    # determine if we can work with the provided fields
+    if not hasattr(fields, '__len__') or type(fields[0]) not in {float, int, numpy.ndarray}:
+        raise TypeError(f"Unsupported type '{type(fields).__name__}' provided for fields!") 
+
+    # lets work with a numpy array
+    integrand = numpy.array(fields)
+
+    # if desired slice or iterate into provided fields
+    if steps is not None:
+        if force_steps or (len(steps) > len(integrand.shape)):
+            integrand = [integrand[step] for step in steps]
+        else:
+            integrand = integrand[steps]
+
     # calculate temporal elements
     if differential:
+        
+        # need to create list base on specifics of attributes provided
+        if times is not None:
+            taus = data.utility.times(times)
+        elif steps is not None:
+            if isinstance(steps, slice):
+                start = starting if steps.start is None else steps.start + starting
+                stop = steps.stop if steps.stop is None else steps.stop + starting
+                taus = data.utility.times(slice(start, stop, steps.step))
+                taus = taus[:len(integrand)] # needed aligned but different length fields and data
+            elif starting == 0:
+                taus = data.utility.times(steps)
+            else:
+                raise ValueError(f'If steps is Iterable, cannot specify starting; must specify times attribute!')
+        else:
+            if starting == 0:
+                taus = data.utility.times(slice(None))
+                taus = taus[:len(integrand)] # needed aligned but different length fields and data
+            else:
+                start = starting
+                stop = starting + len(integrand)
+                taus = data.utility.times(slice(start, stop))
 
-        # get times using keys, then calc widths
-        #   not in one step as keys may not be int
-        time = data.scalars['t'][:][0]
-        keys = times if times is not None else range(len(field))
-        taus = [time[key] for key in keys]
+        # calc time window widths
         dt = [right - left for right, left in zip(taus[1:], taus[:-1])]
-        dt = numpy.array(dt)[(slice(None), ) + (numpy.newaxis, ) * (len(field.shape)-1)]
-
+        dt = numpy.array(dt)[(slice(None), ) + (numpy.newaxis, ) * (len(integrand.shape)-1)]
 
     # use constant weights
     else:
         dt = 1.0
 
-    # suitable for integration, field = [float, ...]
-    if isinstance(field[0], float):
-        integrands = field
-
-    # suitable for integration, field = [ndarray, ...] 
-    elif len(field[0].shape) == 3 or len(field[0].shape) == 4:
-        integrands = field
-
-    # cannot work with provided field
-    else:
-        pass
+    # catch issue with missaligned times and integrand
+    if hasattr(dt, '__len__') and (len(dt) != (len(integrand) - 1)):
+        raise ValueError(f'Unable to correctly determine differential elements for integral')
 
     # perform integration based on method
-    if method in {"left", "right", "center"}:
+    if method in methods:
 
-        if method == "center":
-            integral = numpy.sum(0.5 * (integrands[1:] + integrands[:-1]) * dt, 0)
+        if method == 'center':
+            integral = numpy.sum(0.5 * (integrand[1:] + integrand[:-1]) * dt, 0)
 
         else:
-            index = slice(1, None) if method == "right" else slice(0, -1)
+            index = slice(1, None) if method == 'right' else slice(0, -1)
             integral = numpy.sum(integrands[index] * dt, 0)
 
     # method is not implemented
     else:
-        pass
+        raise ValueError(f"Unsupported method of integration '{method}'; must specify {methods}!") 
 
-    return integral
-
+    # wrap result of integration if desired (no context to provide)
+    wrap = {True: lambda integral: Output(integral), False: lambda integral: integral} 
+    return wrap[wrapped](integral)

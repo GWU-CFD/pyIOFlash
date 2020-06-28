@@ -1,4 +1,4 @@
-"""A setuptools based setup module for the if97 Python package"""
+"""A setuptools based setup module for the pyioflash Python package"""
 from platform import python_version
 from setuptools import setup
 
@@ -14,10 +14,10 @@ with open('readme.rst') as readme:
 # define the setup configuration
 setup(
     name='pyioflash',
-    version='1.0.41',
+    version='1.0.51',
     description='A Python package for processing FLASH4 simulations.',
     long_description=LONG_DESCRIPTION,
-    url='https://github.com/Balaras-Group/pyIOFlash',
+    url='https://github.com/GWU-CFD/pyIOFlash',
     author='Aaron Lentner',
     author_email='aaronlentner@gwmail.gwu.edu',
     license='MIT',

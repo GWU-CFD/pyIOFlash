@@ -7,17 +7,73 @@ Todo:
 
 """
 
-from typing import Any, Tuple, List, Dict, Callable
 
+from typing import Any, Tuple, List, Dict, Iterable, Union, Callable
+from functools import partial
 from sys import stdout
 
+
 from pyioflash.simulation.series import NameData
-from pyioflash.simulation.utility import _reduce_str, open_hdf5
+from pyioflash.simulation.utility import _reduce_str, _get_indices, _get_times, open_hdf5
 from pyioflash.simulation.collections import SortedDict, TransposableAsArray, TransposableAsSingle
 from pyioflash.simulation.geometry import GeometryData
 from pyioflash.simulation.fields import FieldData
 from pyioflash.simulation.scalars import ScalarData
 from pyioflash.simulation.statics import StaticData
+
+
+class Utility:
+    """ A simple class providing helper methods to support extending SimulationData functionality.
+
+    When a SimulationData instance is created, a collection of helper methods is also provided 
+    under the umbrella member class 'utility'. These memeber fuctions provide functionality for 
+    simplifying common tasks such as looking up simulation times as well as assisting accomplishment 
+    of more complicated tasks such as looking up the simulation blocks intersected by a line or plane.
+
+    Attributes:
+        indices: assists in the lookup of simulation indices 
+        times: assists in the lookup of simulation times
+
+    """
+    
+    def __init__(self, data):
+        self._reference = data.fields
+
+    def indices(self, keys: Union[int, float, slice, Iterable] = slice(None)) -> List[int]:
+        """
+        Provides a list of indices associated with a set of simulation times (or indices)
+
+        Attributes:
+            keys: simulation times or indices from which to lookup indices (optional)
+
+        Notes: 
+            the provided times may be approximate and the indices matching each nearest 
+            time will be returned; for example, keys = [..., 30.0, ...] would return the list
+            [..., 27, ...]  from the simulation times   [..., 29.002593, 30.003594, ...] and 
+                                    associated indices  [..., 27, ...].   
+
+        Todo:
+
+        """
+        return _get_indices(self._reference, keys)
+
+    def times(self, keys: Union[int, float, slice, Iterable] = slice(None)) -> List[Union[int, float]]:
+        """
+        Provides a list of times associated with a set of simulation indices (or times)
+
+        Attributes:
+            keys: simulation times or indices from which to lookup times (optional)
+
+        Notes: 
+            the provided times may be approximate and the indices matching each nearest 
+            time will be returned; for example, keys = [..., 30.0, ...] would return the list
+            [..., 30.003594, ...]   from the simulation times   [..., 29.002593, 30.003594, ...] and 
+                                            associated indices  [..., 27, ...].   
+
+        Todo:
+
+        """
+        return _get_times(self._reference, keys)
 
 
 class SimulationData:
@@ -67,6 +123,7 @@ class SimulationData:
         scalars (SortedDict): scalar (e.g., time, dt) data from the processed hdf5 files
         dynamics (SortedDict): time varying information from the processed hdf5 files
         statics (StaticData):  non-time varying information from the processed hdf5 files
+        utility (Utility): collection of helper methods for extending SimulationData functionality
 
     Note:
 
@@ -86,6 +143,7 @@ class SimulationData:
     scalars: SortedDict
     dynamics: SortedDict
     statics: StaticData
+    utility: Utility
 
     def __init__(self, files: NameData, *, form: str = None, code: str = None):
         # initialize filenames
@@ -119,6 +177,9 @@ class SimulationData:
         # other codes not supported
         else:
             raise Exception(f'Codes other then FLASH4 not supported; code == flash')
+
+        # intialize utility functions
+        self.utility = Utility(self)
 
     @classmethod
     def from_list(cls, numbers: List[int], *, numform: str = None, path: str = None,
