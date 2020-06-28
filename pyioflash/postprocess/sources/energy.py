@@ -176,6 +176,8 @@ def kinetic_mean(data: 'SimulationData', steps: Optional['Type_Index'] = slice(N
         index = (i_all, ) * 4 if (keepdims or dimension == 3) else (i_all, 0, i_all, i_all)
 
     # use provided information to source times
+    if start or stop:
+        steps = slice(start, stop, skip)
     times = data.utility.times(steps)
     steps = data.utility.indices(steps)
 

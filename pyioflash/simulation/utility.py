@@ -63,7 +63,7 @@ def _get_indices(data: 'SortedDict', key: Union[int, float, slice, Iterable]) ->
                 stop = len(keys)
             else:
                 try:
-                    stop = keys.index(_first_true(reversed(keys), lambda x: x <= key.stop) + 1)
+                    stop = keys.index(_first_true(reversed(keys), lambda x: x <= key.stop)) + 1
                 except StopIteration:
                     stop = len(keys)
             if key.step is not None:

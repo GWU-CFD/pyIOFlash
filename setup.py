@@ -14,7 +14,7 @@ with open('readme.rst') as readme:
 # define the setup configuration
 setup(
     name='pyioflash',
-    version='1.0.51',
+    version='1.0.xx',
     description='A Python package for processing FLASH4 simulations.',
     long_description=LONG_DESCRIPTION,
     url='https://github.com/GWU-CFD/pyIOFlash',
