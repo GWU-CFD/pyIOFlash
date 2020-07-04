@@ -6,12 +6,10 @@ analysis.
 """
 
 # Used to povide most simple importing of meaningful data
-from pyioflash.postprocess.sources import energy
+from pyioflash.postprocess import sources
 
 # Used to provide most simple operations on data
-from pyioflash.postprocess.elements import integral
-#from pyioflash.postprocess.elements import derivative
-#from pyioflash.postprocess.elements import relative 
+from pyioflash.postprocess import elements
 
 # Used to provide most simple time-series like analysis
-from pyioflash.postprocess.analyses import series
+from pyioflash.postprocess import analyses 

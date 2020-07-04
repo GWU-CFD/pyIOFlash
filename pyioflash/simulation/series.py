@@ -40,7 +40,7 @@ def data_from_path(path: DataPath, *,
     if index is not None:
         lookup = lambda entry, index : entry[index]
     else:
-        lookup = lambda entry, index : entry[:]
+        lookup = lambda entry, index : entry
 
     # attache time-like slice if provided
     if times is not None:

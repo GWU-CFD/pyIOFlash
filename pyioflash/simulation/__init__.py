@@ -9,5 +9,5 @@ from pyioflash.simulation.data import SimulationData
 # Used to assist in defining time series data
 from pyioflash.simulation.series import NameData
 from pyioflash.simulation.series import DataPath
-from pyioflash.simulation.series import data_from_path 
+from pyioflash.simulation.series import data_from_path
 

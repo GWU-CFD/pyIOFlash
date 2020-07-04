@@ -4,7 +4,6 @@ This module defines the utility methods and classes necessary for the
 post-processing subpackage of the pyioflash library.
 
 Todo:
-    None
 
 """
 
@@ -15,7 +14,7 @@ from functools import partial
 from sys import stdout
 
 
-from numpy import array
+import numpy
 
 
 if TYPE_CHECKING:
@@ -238,8 +237,8 @@ def _ingest_source(source: Type_Source, sourceby: Type_SourceBy, *,
             Exception(f'Provided source.method not supported!')
 
     # provided source is directly usable as output
-    elif type(source) == ndarray or type(source) == list:
-        if type(source[0]) not in (str, int, float, ndarray):
+    elif type(source) == numpy.ndarray or type(source) == list:
+        if type(source[0]) not in (str, int, float, numpy.ndarray):
             Exception(f'Provided source appears to be a collection, but cannot be used!')
         output = source
 
@@ -247,11 +246,11 @@ def _ingest_source(source: Type_Source, sourceby: Type_SourceBy, *,
     else:
         Exception(f'Cannot work with provided source!')
 
-    return array(output)
+    return numpy.array(output)
 
 
 def _interpolate_ftc(field: Type_Field, axis: int, guards: int, dimension: int, *, 
-                     keepdims: bool = True) -> Type_Field:
+                     withguard: bool = False, keepdims: bool = True) -> Type_Field:
     """
     Provides a method for interpolation from the face centered grids to the cell centered grid.
 
@@ -264,11 +263,19 @@ def _interpolate_ftc(field: Type_Field, axis: int, guards: int, dimension: int, 
 
     Note:
         Performs simple linear two-point grid interpolation along relavent axis.
-        Returned array does not have guard cells included
+
+        Input array is assumed to have guard cells included according to guards.
+        Input array is assumed to be broadcastable to same as SimualationData.fields
+        face-centered data (e.g., _fcx2)
+
+        If returned array has guard cells included, the lower guard cells are initialized
+        to a zero value as the library does not currently store an extra cell along the 
+        staggered direction.
 
     Todo:
         Implement more advanced interpolation schemes
         Add support for providing guard cells in returned array
+        Add support for arbritrary dimensionality
         Reimplement select case construct as dictionary
 
     """
@@ -277,9 +284,9 @@ def _interpolate_ftc(field: Type_Field, axis: int, guards: int, dimension: int, 
 
     # define necessary slice operations
     iall = slice(None)
-    icom = slice(guard, -guard)
-    izcm = icom if (keepdims or dimension == 3) else 1
-    idif = slice(guard - 1, -(guard + 1))
+    icom = slice(guard, -guard) # if not withguard else slice(guard, None)
+    izcm = icom if (keepdims or dimension == 3) else guard
+    idif = slice(guard - 1, -(guard + 1)) # if not withguard else slice(guard - 1, -guard)
 
     # define the upper axis; velocity on staggered grid where upper bound is on
     #   the domain boundary & the outer most interior cell on the high side of axis
@@ -297,6 +304,15 @@ def _interpolate_ftc(field: Type_Field, axis: int, guards: int, dimension: int, 
     else:
         pass
 
+    # need to initialize the result
+    #if withguard:
+    #    result = numpy.zeros_like(field)
+    #else:
+    #    result = numpy.zeros_like(field[high])
+    #
+    # interpolate the face-centered field to cell-centers
+    #result[high] = (field[high] + field[low]) / 2.0
+    #
+    #return result
+
     return (field[high] + field[low]) / 2.0
-
-

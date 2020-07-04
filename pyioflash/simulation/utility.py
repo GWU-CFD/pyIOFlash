@@ -8,7 +8,7 @@ Todo:
 
 
 from contextlib import contextmanager
-from typing import Any, List, Iterable, Union, Callable, TYPE_CHECKING
+from typing import Any, Tuple, List, Iterable, Union, Callable, TYPE_CHECKING
 
 
 import h5py
@@ -16,6 +16,44 @@ import h5py
 
 if TYPE_CHECKING:
     from pyioflash.simulation.collections import SortedDict
+    from pyioflash.simulation.geometry import GeometryData
+
+
+def _blocks_from_plane(data: 'GeometryData', axis: str, value: float) -> List[int]:
+    """Returns a list of block indices (using geometry data) which intersect a provided plane"""
+
+    # define intersection truth function
+    within = lambda low, high, check: low <= check and check < high
+    
+    # define axis of provided plane and retrieve bounding boxes
+    index = {axis: index for index, axis in enumerate(['x', 'y', 'z'])}[axis]
+    boxes = data.blk_bndbox[:, index, :]
+ 
+    # return blocks which are intersected by plane; open interval value in [low, high)
+    if data.grd_dim == 2 and axis == 'z':
+        return list(range(len(boxes))) # open interval results in empty set for z-axis in 2d
+    else:
+        return [block for block, box in enumerate(boxes) if within(*(tuple(box) + (value, )))]
+
+
+def _blocks_from_line(data: 'GeometryData', axes: Tuple[str], values: Tuple[float]) -> List[int]:
+    """Returns a list of block indices (using geometry data) which intersect a provided line"""
+
+    # define intersection truth function
+    within = lambda low, high, check: low <= check and check < high
+
+    # define axes of provided line and retrive bounding boxes
+    mapping = {axis: index for index, axis in enumerate(['x', 'y', 'z'])}
+    boxes0 = data.blk_bndbox[:, mapping[axes[0]], :]
+    boxes1 = data.blk_bndbox[:, mapping[axes[1]], :]
+
+    # return blocks which are intersected by a line; open interval values in [lows, highs)
+    if data.grd_dim == 2 and 'z' in axes:  # open interval results in empty set for z-axis in 2d
+        axis, value = [(axis, value) for axis, value in zip(axes, values) if axis != 'z'][0]
+        return _blocks_from_plane(data, axis, value)
+    else:
+        return [block for block, (box0, box1) in enumerate(zip(boxes0, boxes1)) 
+                if within(*(tuple(box0) + (values[0], ))) and within(*(tuple(box1) + (values[1], )))]
 
 def _first_true(iterable: Iterable, predictor: Callable[..., bool]) -> Any:
     """Returns the first true value in the iterable according to predictor."""
@@ -102,7 +140,7 @@ def _get_indices(data: 'SortedDict', key: Union[int, float, slice, Iterable]) ->
 def _get_times(data: 'SortedDict', key: Union[int, float, slice, Iterable]) -> List[Union[int, float]]:
     """Returns a list of keys associated with the indicies (or keys) from a SortedDict"""
     keys = list(data.keys())
-    print(_get_indices(data, key))
+    #print(_get_indices(data, key))
     return [keys[k] for k in _get_indices(data, key)]
 
 

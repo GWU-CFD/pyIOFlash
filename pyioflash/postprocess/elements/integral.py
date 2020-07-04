@@ -89,7 +89,7 @@ def space_full(data: 'SimulationData', field: 'Type_Field', *,
         deltaV = 1.0
 
     # perform integration and index the result
-    integral = numpy.sum(field * deltaV)[index]
+    integral = numpy.sum(field * deltaV)
 
     # wrap result of integration if desired (no context to provide)
     wrap = {True: lambda integral: Output(integral), False: lambda integral: integral} 
@@ -207,7 +207,7 @@ def time(data: 'SimulationData', fields: 'Type_Output', *,
         raise TypeError(f"Unsupported type '{type(steps).__name__}' provided for steps, must be 'slice' of 'Iterable'") 
 
     # determine if we can work with the provided fields
-    if not hasattr(fields, '__len__') or type(fields[0]) not in {float, int, numpy.ndarray}:
+    if not hasattr(fields, '__len__') or type(fields[0]) not in {float, int, numpy.float64, numpy.ndarray}:
         raise TypeError(f"Unsupported type '{type(fields).__name__}' provided for fields!") 
 
     # lets work with a numpy array

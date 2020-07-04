@@ -16,6 +16,12 @@ def simple(source: 'Type_Source', sourceby: Optional['Type_SourceBy'] = None,
            stack: Optional['Type_Stack'] = None, *, 
            path: Optional['DataPath'] = None) -> 'Type_Output':
     """
+    Provides a method to perform a simple time-series like post-processing of 
+    simulation data; specificaly, this method consumes a source + sourceby, and a 
+    set of stackable methods in order to perform the desired time-series and/or
+    permutation analysis.
+
+    Attributes:
 
 
     """
@@ -54,7 +60,7 @@ def simple(source: 'Type_Source', sourceby: Optional['Type_SourceBy'] = None,
                 # no context provided for previous element output
                 else:
                     result = rewrap([unwrap(item.element(part))
-                                     for part in result.data])
+                                     for part in result])
 
             # operate on the previous result as a whole with current element
             elif item.method == 'whole':
