@@ -11,6 +11,7 @@ the hdf5 output files catagorically:
     FieldData
 
 Todo:
+    * Check if velocity date is in file -- and provide better names for them
     * Provide differed or Just-In-Time block data loading for large simulations
 
 """

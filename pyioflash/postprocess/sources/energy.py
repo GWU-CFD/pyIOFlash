@@ -182,7 +182,7 @@ def kinetic_mean(data: 'SimulationData', steps: Optional['Type_Index'] = slice(N
                  start: Optional['Type_Step'] = None, stop: Optional['Type_Step'] = None, skip: Optional[int] = None,
                  wrapped: bool = False, mapping: Dict[str, str] = {},
                  scale : Optional[float] = None, index: Optional['Type_Index'] = None, 
-                 withguard: bool = False, keepdims: bool = True) -> Union['Type_Field', Output]:
+                 withguard: bool = False, keepdims: bool = True) -> 'Type_Output':
     """
     Provides a method for calculation of the mean or time-averaged kinetic energy by 
     consuming a SimulationData object and a time interval specification; 
@@ -255,7 +255,7 @@ def kinetic_turbulant(data: 'SimulationData', step: Optional['Type_Step'] = -1, 
                       stop: Optional['Type_Step'] = None, skip: Optional[int] = None,
                       wrapped: bool = False, mapping: Dict[str, str] = {},
                       scale : Optional[float] = None, index: Optional['Type_Index'] = None, 
-                      withguard: bool = False, keepdims: bool = True) -> 'Type_Field':
+                      withguard: bool = False, keepdims: bool = True) -> 'Type_Output':
     """
     Provides a method for calculation of the turbulant kinetic energy by 
     consuming a SimulationData object and a either a mean field or a time 
