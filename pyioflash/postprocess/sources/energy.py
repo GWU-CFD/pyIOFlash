@@ -65,6 +65,14 @@ def thermal(data: 'SimulationData', step: 'Type_Step' = -1, *,
 
     """
 
+    # convert to integer from key if necessary
+    if isinstance(step, float):
+        try:
+            step, = data.utility.indices(step)
+        except ValueError as error:
+            print(error)
+            print('Could not find provided step in simulation keys!')
+
     # need the dimensionality
     dimension = data.geometry.grd_dim
 
@@ -131,6 +139,14 @@ def kinetic(data: 'SimulationData', step: 'Type_Step' = -1, *,
 
     """
 
+    # convert to integer from key if necessary
+    if isinstance(step, float):
+        try:
+            step, = data.utility.indices(step)
+        except ValueError as error:
+            print(error)
+            print('Could not find provided step in simulation keys!')
+
     # need the dimensionality
     dimension = data.geometry.grd_dim
 
@@ -166,7 +182,7 @@ def kinetic_mean(data: 'SimulationData', steps: Optional['Type_Index'] = slice(N
                  start: Optional['Type_Step'] = None, stop: Optional['Type_Step'] = None, skip: Optional[int] = None,
                  wrapped: bool = False, mapping: Dict[str, str] = {},
                  scale : Optional[float] = None, index: Optional['Type_Index'] = None, 
-                 keepdims: bool = True) -> Union['Type_Field', Output]:
+                 withguard: bool = False, keepdims: bool = True) -> Union['Type_Field', Output]:
     """
     Provides a method for calculation of the mean or time-averaged kinetic energy by 
     consuming a SimulationData object and a time interval specification; 
@@ -182,6 +198,7 @@ def kinetic_mean(data: 'SimulationData', steps: Optional['Type_Index'] = slice(N
         mapping: if wrapped, how to map context to options of the next operation (optional)
         scale: used to convert returned quantity to dimensional units (optional)
         index: used for custom slicing operation; should be (blks, k, j, i) (optional)
+        withguard: retain guard cell data for ploting and other actions (optional)
         keepdims: retain unused dimensions for broadcasting, else drop them (optional)
 
     Note:
@@ -201,10 +218,14 @@ def kinetic_mean(data: 'SimulationData', steps: Optional['Type_Index'] = slice(N
     # need the dimensionality
     dimension = data.geometry.grd_dim
 
+    # get guard size
+    guards = data.geometry.blk_guards
+
     # need to define slicing operators based on dims
     if index is None:
         i_all = slice(None)
-        index = (i_all, ) * 4 if (keepdims or dimension == 3) else (i_all, 0, i_all, i_all)
+        i_zax = 0 if not withguard else int(guards / 2)
+        index = (i_all, ) * 4 if (keepdims or dimension == 3) else (i_all, i_zax, i_all, i_all)
 
     # use provided information to source times
     if start or stop:
@@ -213,7 +234,7 @@ def kinetic_mean(data: 'SimulationData', steps: Optional['Type_Index'] = slice(N
     steps = data.utility.indices(steps)
 
     # use time series analysis to retreve mean kinetic energy
-    source = make_sourceable(source=kinetic, args=data, method='step')
+    source = make_sourceable(source=kinetic, args=data, method='step', options={'withguard': withguard})
     stack = make_stackable(element=integral.time, args=data, method='whole', options={'times': times})
     energy = series.simple(source=source, sourceby=steps, stack=stack) 
 
@@ -234,7 +255,7 @@ def kinetic_turbulant(data: 'SimulationData', step: Optional['Type_Step'] = -1, 
                       stop: Optional['Type_Step'] = None, skip: Optional[int] = None,
                       wrapped: bool = False, mapping: Dict[str, str] = {},
                       scale : Optional[float] = None, index: Optional['Type_Index'] = None, 
-                      keepdims: bool = True) -> 'Type_Field':
+                      withguard: bool = False, keepdims: bool = True) -> 'Type_Field':
     """
     Provides a method for calculation of the turbulant kinetic energy by 
     consuming a SimulationData object and a either a mean field or a time 
@@ -252,6 +273,7 @@ def kinetic_turbulant(data: 'SimulationData', step: Optional['Type_Step'] = -1, 
         mapping: if wrapped, how to map context to options of the next operation (optional)
         scale: used to convert returned quantity to dimensional units (optional)
         index: used for custom slicing operation; should be (blks, k, j, i) (optional)
+        withguard: retain guard cell data for ploting and other actions (optional)
         keepdims: retain unused dimensions for broadcasting, else drop them (optional)
 
     Note:
@@ -267,20 +289,33 @@ def kinetic_turbulant(data: 'SimulationData', step: Optional['Type_Step'] = -1, 
     Todo:
 
     """
+
+    # convert to integer from key if necessary
+    if isinstance(step, float):
+        try:
+            step, = data.utility.indices(step)
+        except ValueError as error:
+            print(error)
+            print('Could not find provided step in simulation keys!')
+
     # need the dimensionality
     dimension = data.geometry.grd_dim
+
+    # get guard size
+    guards = data.geometry.blk_guards
 
     # need to define slicing operators based on dims
     if index is None:
         i_all = slice(None)
-        index = (i_all, ) * 4 if (keepdims or dimension == 3) else (i_all, 0, i_all, i_all)
+        i_zax = 0 if not withguard else int(guards / 2)
+        index = (i_all, ) * 4 if (keepdims or dimension == 3) else (i_all, i_zax, i_all, i_all)
 
     # retieve mean kinetic energy if not provided
     if mean is None:
-        mean = kinetic_mean(data, start=start, stop=stop, skip=skip, index=index, keepdims=keepdims)
+        mean = kinetic_mean(data, start=start, stop=stop, skip=skip, index=index, withguard=withguard, keepdims=keepdims)
 
     # turbulant energy
-    energy = kinetic(data, step, scale=scale, index=index, keepdims=keepdims) - mean
+    energy = kinetic(data, step, scale=scale, index=index, withguard=withguard, keepdims=keepdims) - mean
                       
     # wrap result of integration if desired (no context to provide)
     wrap = {True: lambda source: Output(source), False: lambda source: source} 

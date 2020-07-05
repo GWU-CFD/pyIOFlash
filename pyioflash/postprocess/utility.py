@@ -270,11 +270,12 @@ def _interpolate_ftc(field: Type_Field, axis: int, guards: int, dimension: int, 
 
         If returned array has guard cells included, the lower guard cells are initialized
         to a zero value as the library does not currently store an extra cell along the 
-        staggered direction.
+        staggered direction. Therefore, algorythms such as by block plotting will need to 
+        order the operation such that the valid neughboring block layer the default guard
+        cell data.
 
     Todo:
         Implement more advanced interpolation schemes
-        Add support for providing guard cells in returned array
         Add support for arbritrary dimensionality
         Reimplement select case construct as dictionary
 
@@ -284,9 +285,9 @@ def _interpolate_ftc(field: Type_Field, axis: int, guards: int, dimension: int, 
 
     # define necessary slice operations
     iall = slice(None)
-    icom = slice(guard, -guard) # if not withguard else slice(guard, None)
+    icom = slice(guard, -guard) if not withguard else slice(guard, None)
     izcm = icom if (keepdims or dimension == 3) else guard
-    idif = slice(guard - 1, -(guard + 1)) # if not withguard else slice(guard - 1, -guard)
+    idif = slice(guard - 1, -(guard + 1)) if not withguard else slice(guard - 1, -guard)
 
     # define the upper axis; velocity on staggered grid where upper bound is on
     #   the domain boundary & the outer most interior cell on the high side of axis
@@ -304,15 +305,11 @@ def _interpolate_ftc(field: Type_Field, axis: int, guards: int, dimension: int, 
     else:
         pass
 
-    # need to initialize the result
-    #if withguard:
-    #    result = numpy.zeros_like(field)
-    #else:
-    #    result = numpy.zeros_like(field[high])
-    #
-    # interpolate the face-centered field to cell-centers
-    #result[high] = (field[high] + field[low]) / 2.0
-    #
-    #return result
+    # need to initialize the result and index
+    result = numpy.zeros_like(field)
+    ires = (iall, ) * 4 if withguard else high
 
-    return (field[high] + field[low]) / 2.0
+    #interpolate the face-centered field to cell-centers
+    result[high] = (field[high] + field[low]) / 2.0
+    
+    return result[ires]

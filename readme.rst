@@ -13,7 +13,7 @@ Full package documentation can be found at the GitHub Pages for pyIOFlash_.
 .. _pyIOFlash: https://pyioflash.readthedocs.io
 
 :Authors:	Aaron Lentner, Akash Dhruv
-:Revision:	1.0.52 (pre-alpha)
+:Revision:	1.0.54 (pre-alpha)
 
 *Needed Feature List*
 
