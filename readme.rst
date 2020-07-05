@@ -12,7 +12,7 @@ Full package documentation can be found at the GitHub Pages for pyIOFlash_.
 
 .. _pyIOFlash: https://pyioflash.readthedocs.io
 
-Jupyter Notebook based examples of using the library are also provided.
+Jupyter Notebook based examples_ of using the library are also provided.
 
 .. _examples: https://nbviewer.jupyter.org/github/GWU-CFD/pyIOFlash/tree/development/examples/
 
