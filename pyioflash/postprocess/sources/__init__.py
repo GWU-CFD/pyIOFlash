@@ -8,6 +8,9 @@ sub-sub-package.
 # Used to produce energy fields from SimulationData
 from pyioflash.postprocess.sources import energy
 
+# Used to produce useful fields SimulationData
+from pyioflash.postprocess.sources import fields
+
 # Used to produce force fields from SimulationData
 #from pyioflash.postprocess.sources import force
 

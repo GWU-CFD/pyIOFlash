@@ -32,7 +32,7 @@ def space_full(data: 'SimulationData', field: 'Type_Field', *,
                differential: bool = True, 
                wrapped: bool = False, mapping: Dict[str, str] = {},
                scale: Optional[float] = None, index: Optional['Type_Index'] = None, 
-               keepdims: bool = True) -> 'Type_Output':
+               withguard: bool = False, keepdims: bool = True) -> 'Type_Output':
     """
     Provides a method for calculation of the volumetric integral of a field by 
     consuming a SimulationData object; ...
@@ -45,7 +45,7 @@ def space_full(data: 'SimulationData', field: 'Type_Field', *,
         wrapped: whether to wrap context around result of integration (optional)
         mapping: if wrapped, how to map context to options of the next operation (optional)
         scale: used to convert returned quantity to dimensional units (optional)
-        index: used for custom slicing operation; should be (blks, k, j, i) (optional)
+        index: used for custom slicing operation on differential; should be (blks, k, j, i) (optional)
         keepdims: input field has retained unused dimensions for broadcasting, else were dropped (optional)
 
     Note:
@@ -63,11 +63,14 @@ def space_full(data: 'SimulationData', field: 'Type_Field', *,
     # need the dimensionality
     dimension = data.geometry.grd_dim
 
+    # get guard size
+    guards = data.geometry.blk_guards
+
     # need to define slicing operators based on dims
-    i_zax = slice(None) if (keepdims or dimension == 3) else 0
-    i_all = slice(None)
     if index is None:
-        index = (i_all, ) * (4 if (keepdims or dimension == 3) else 3)
+        i_all = slice(None)
+        i_zax = 0 if not withguard else int(guards / 2)
+        index = (i_all, ) * 4 if (keepdims or dimension == 3) else (i_all, i_zax, i_all, i_all)        
 
     # calculate volume elements
     if differential:
@@ -75,13 +78,21 @@ def space_full(data: 'SimulationData', field: 'Type_Field', *,
         i_grd = {"left" : 0, "center" : 1, "right" : 2}[face]
 
         # retrieve cell centered grid metrics
-        ddxc = data.geometry.grd_mesh_ddx[(i_grd, i_all, i_zax, i_all, i_all)]
-        ddyc = data.geometry.grd_mesh_ddy[(i_grd, i_all, i_zax, i_all, i_all)]
+        if withguard:
+            ddxc = data.geometry._grd_mesh_ddx[(i_grd, ) + index]
+            ddyc = data.geometry._grd_mesh_ddy[(i_grd, ) + index]
+        else: 
+            ddxc = data.geometry.grd_mesh_ddx[(i_grd, ) + index]
+            ddyc = data.geometry.grd_mesh_ddy[(i_grd, ) + index]
+    
     
         # initialize volume element
         deltaV = 1/ddxc * 1/ddyc
         if dimension == 3:
-            ddzc = data.geometry.grd_mesh_ddz[(i_grd, i_all, i_zax, i_all, i_all)]
+            if withguard:
+                ddzc = data.geometry._grd_mesh_ddz[(i_grd, ) + index]
+            else:
+                ddzc = data.geometry.grd_mesh_ddz[(i_grd, ) + index]
             deltaV = deltaV * 1/ddzc
 
     # use constant weights

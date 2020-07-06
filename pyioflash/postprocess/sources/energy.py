@@ -15,10 +15,11 @@ Todo:
 """
 
 
-from typing import Dict, Optional, Union, TYPE_CHECKING 
+from typing import List, Dict, Optional, Union, TYPE_CHECKING 
 
 
 from pyioflash.postprocess.utility import _interpolate_ftc, make_sourceable, make_stackable, Output
+from pyioflash.postprocess.sources import fields
 from pyioflash.postprocess.elements import integral
 from pyioflash.postprocess.analyses import series
 
@@ -26,6 +27,11 @@ from pyioflash.postprocess.analyses import series
 if TYPE_CHECKING:
     from pyioflash.simulation.data import SimulationData
     from pyioflash.postprocess.utility import Type_Step, Type_Field, Type_Index, Type_Output
+
+
+# define the module api
+def __dir__() -> List[str]:
+    return ["thermal", "kinetic", "kinetic_mean", "kinetic_turbulant"]
 
 
 def thermal(data: 'SimulationData', step: 'Type_Step' = -1, *,
@@ -76,10 +82,13 @@ def thermal(data: 'SimulationData', step: 'Type_Step' = -1, *,
     # need the dimensionality
     dimension = data.geometry.grd_dim
 
+    # get guard size
+    guards = data.geometry.blk_guards
+
     # need to define slicing operators based on dims
     if index is None:
         i_all = slice(None)
-        i_zax = 0 if not withguard else 1
+        i_zax = 0 if not withguard else int(guards / 2) 
         index = (i_all, ) * 4 if (keepdims or dimension == 3) else (i_all, i_zax, i_all, i_all)
 
     # define lookup based on desired guarding option
@@ -277,11 +286,14 @@ def kinetic_turbulant(data: 'SimulationData', step: Optional['Type_Step'] = -1, 
         keepdims: retain unused dimensions for broadcasting, else drop them (optional)
 
     Note:
-        The mean kinetic energy is computed according to the formula
+        The turbulant kinetic energy is computed according to the formula
 
-                E(t)~ijk~ = (u(t)~ijk~^2^ + v(t)~ijk~^2^ + w(t)~ijk~^2^) - mean
+                E(t)~ijk~ = (u(t)~ijk~ - u_bar~ijk~)^2^ + ...
 
                 *where the all terms are interpolated to cell centers*
+
+        If a mean is provided it must be a 2 or 3 component field broadcastable with simulation data velocity
+        components; specifically, (dims, blks, k, j, i).
 
         This function does not generate any dynamic context; this even if wrapping is desired and specified, the
         mapping attribute is ignored.
@@ -310,13 +322,42 @@ def kinetic_turbulant(data: 'SimulationData', step: Optional['Type_Step'] = -1, 
         i_zax = 0 if not withguard else int(guards / 2)
         index = (i_all, ) * 4 if (keepdims or dimension == 3) else (i_all, i_zax, i_all, i_all)
 
-    # retieve mean kinetic energy if not provided
+    # retieve mean velocity components if not provided
     if mean is None:
-        mean = kinetic_mean(data, start=start, stop=stop, skip=skip, index=index, withguard=withguard, keepdims=keepdims)
+        components = fields.velocity_mean(data, start=start, stop=stop, skip=skip, withguard=withguard)
+        u_bar, v_bar = components[:2]
+        if dimension == 3:
+            w_bar = components[2]
+    
+    # mean is provided
+    else:
+        # is the provided mean usable
+        if not hasattr(mean, '__len__') and len(mean) not in (2, 3):
+            raise TypeError('Provided mean does not have three velocity components!')
 
-    # turbulant energy
-    energy = kinetic(data, step, scale=scale, index=index, withguard=withguard, keepdims=keepdims) - mean
-                      
+        # unpack provided components
+        u_bar, v_bar = mean[:2]
+        if dimension == 3:
+            w_bar = mean[2]   
+
+    # calculate instantanious velocity components on cell-centers
+    u_ins = _interpolate_ftc(data.fields['_fcx2'][step][0], 0, guards, dimension, withguard=withguard)
+    v_ins = _interpolate_ftc(data.fields['_fcy2'][step][0], 1, guards, dimension, withguard=withguard)
+    if dimension == 3:
+        w_ins = _interpolate_ftc(data.fields['_fcz2'][step][0], 2, guards, dimension, withguard=withguard)
+    
+    # calculate turbulant kinetic energy
+    energy = ((u_ins - u_bar)**2 + (v_ins - v_bar)**2) / 2
+    if dimension == 3:
+        energy = energy + ((w_ins - w_bar)**2 / 2)
+
+    # apply a dimensional scale
+    if scale is not None:
+        energy = energy * scale
+
+    # index results if desired
+    energy = energy[index]
+
     # wrap result of integration if desired (no context to provide)
     wrap = {True: lambda source: Output(source), False: lambda source: source} 
     return wrap[wrapped](energy)

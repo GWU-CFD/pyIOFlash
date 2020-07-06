@@ -54,7 +54,7 @@ def data_from_path(path: DataPath, *,
 
     # apply correct lookup semantics based on provided path, times, and index 
     if path.module in {'fields', 'scalars'}:
-        return lookup(source(getattr(path.data, path.module), times)[path.name], index)[0]
+        return lookup(source(getattr(path.data, path.module), times)[path.name], index)[:][0]
 
     elif path.module in {'dynamics'}:
         return lookup(source(getattr(path.data, path.module), times)[path.type][path.name], index)

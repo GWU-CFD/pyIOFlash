@@ -17,6 +17,8 @@ from sys import stdout
 import numpy
 
 
+from pyioflash.simulation.series import DataPath, data_from_path
+
 if TYPE_CHECKING:
     from numpy import ndarray
     from pyioflash.simulation import SimulationData, DataPath
@@ -201,7 +203,8 @@ def _ingest_source(source: Type_Source, sourceby: Type_SourceBy, *,
             Exception(f'Must provide a DataPath for named sources')
         if sourceby is None:
             sourceby = path.data.utility.indices()
-        output = [data_from_path(path, times=time) for time in sourceby]
+        path = path._replace(name=source)
+        output = [data_from_path(path, times=time)[0] for time in sourceby]
 
     # injest a Sourceable using sourceby
     elif type(source) == Sourceable:

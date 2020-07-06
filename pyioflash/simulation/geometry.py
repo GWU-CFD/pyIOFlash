@@ -221,15 +221,15 @@ class GeometryData(_BaseData):
                                         self.blk_size_z + self.blk_guards,
                                         self.blk_size_y + self.blk_guards, 
                                         self.blk_size_x + self.blk_guards), dtype=numpy.dtype(float))
-        self._grd_mesh_ddx = numpy.zeros((3, self.blk_num, 
+        self._grd_mesh_ddx = numpy.ones((3, self.blk_num, 
                                         self.blk_size_z + self.blk_guards,
                                         self.blk_size_y + self.blk_guards, 
                                         self.blk_size_x + self.blk_guards), dtype=numpy.dtype(float))
-        self._grd_mesh_ddy = numpy.zeros((3, self.blk_num, 
+        self._grd_mesh_ddy = numpy.ones((3, self.blk_num, 
                                         self.blk_size_z + self.blk_guards,
                                         self.blk_size_y + self.blk_guards, 
                                         self.blk_size_x + self.blk_guards), dtype=numpy.dtype(float))
-        self._grd_mesh_ddz = numpy.zeros((3, self.blk_num, 
+        self._grd_mesh_ddz = numpy.ones((3, self.blk_num, 
                                         self.blk_size_z + self.blk_guards,
                                         self.blk_size_y + self.blk_guards, 
                                         self.blk_size_x + self.blk_guards), dtype=numpy.dtype(float))
