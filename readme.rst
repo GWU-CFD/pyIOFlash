@@ -14,7 +14,7 @@ Full package documentation can be found at the GitHub Pages for pyIOFlash_.
 
 Jupyter Notebook based examples_ of using the library are also provided.
 
-.. _examples: https://nbviewer.jupyter.org/github/GWU-CFD/pyIOFlash/tree/development/examples/
+.. _examples: https://nbviewer.jupyter.org/github/GWU-CFD/pyIOFlash/tree/master/examples/ 
 
 :Authors:	Aaron Lentner, Akash Dhruv
 :Revision:	1.0.55 (pre-alpha)
