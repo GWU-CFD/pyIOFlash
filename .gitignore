@@ -15,3 +15,7 @@
 *.egg-info
 /pyioflash/__pycache__
 /pyioflash/*/__pycache__
+/pyioflash/*/*/__pycache__
+
+# jupyter notebook checkpoints
+/examples/.ipynb_checkpoints

@@ -12,8 +12,12 @@ Full package documentation can be found at the GitHub Pages for pyIOFlash_.
 
 .. _pyIOFlash: https://pyioflash.readthedocs.io
 
+Jupyter Notebook based examples_ of using the library are also provided.
+
+.. _examples: https://nbviewer.jupyter.org/github/GWU-CFD/pyIOFlash/tree/development/examples/
+
 :Authors:	Aaron Lentner, Akash Dhruv
-:Revision:	1.0.44 (pre-alpha)
+:Revision:	1.0.55 (pre-alpha)
 
 *Needed Feature List*
 
@@ -41,7 +45,7 @@ Quick Reference
   data = SimulationData.from_list(range(20), path='../out/',
                                   header='INS_LidDr_Cavity_hdf5_plt_cnt_')
 
-  data.fields[20.0 : 60.0 : 2]['temp', 'pres'][:, :, :, :, :]
+  data.fields[20.0 : 60.0 : 2]['temp', 'pres'][:, :, :, :, :][:]
 
 
 *Reference*
@@ -55,17 +59,29 @@ Quick Reference
 +---------------+------------------------------------------+
 |scalars        |(time, dt, nstep, nbegin)                 |
 +---------------+------------------------------------------+
-|dynamics       |remaining hdf5 plt file (time varying)    |
+|dynamics       |remaining hdf5 file info (time varying)   |
 +---------------+------------------------------------------+
-|statics        |remaining hdf5 plt file (steady w/ time)  |
+|statics        |remaining hdf5 file info (steady w/ time) |
 +---------------+------------------------------------------+
 
 +----------------------------------------------------------+
-|SimulationData                                            |
+|SimulationPlot                                            |
 +===============+==========================================+
 |plot           |method for plotting 2D and line           |
 +---------------+------------------------------------------+
 |animate        |method for animating 2D and line plots    |
 +---------------+------------------------------------------+
 |show           |method for showing / saving plots         |
++---------------+------------------------------------------+
+
++----------------------------------------------------------+
+|SimulationProcess                                         |
++===============+==========================================+
+|simple         |methods for simple post-processing        |
++---------------+------------------------------------------+
+
++----------------------------------------------------------+
+|SimulationPrepare                                         |
++===============+==========================================+
+|simple         |methods for simple pre-processing         |
 +---------------+------------------------------------------+

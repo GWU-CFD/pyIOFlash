@@ -1,15 +1,74 @@
 """
 
-This module defines the utility methods and classes necessary for the pyio package.
+This module defines public methods and classes necessary for the 
+SimulationData subpackage of the pyioflash library.
+
+This module provides abstractions useful for interacting with the 
+SimulationData package in a series or time-like manner.
+
+Currently this module implements the following useful abstractions:
+
+    NameData       -> provides an abstraction of the filenames output by FLASH
+    DataPath       -> provides a why to locate data in the SimulationData object
+    data_from_path -> provides an interface to extract data using DataPath 
+
 
 Todo:
-    None
+    Build typying information for SimulationData
 """
 
 from dataclasses import dataclass, field
-from typing import List, Iterable, Union
+from collections import namedtuple
+from typing import List, Iterable, Union, Any, Optional, TYPE_CHECKING
 
-Namelist = Iterable[Union[int, str]]
+if TYPE_CHECKING:
+    from numpy import ndarray
+    from pyioflash.simulation.data import SimulationData
+
+
+DataPath = namedtuple('DataPath', ['data', 'module', 'type', 'name'], defaults=[None, None])
+
+
+def data_from_path(path: DataPath, *,
+                   index: Optional[Union[Iterable, slice, int]] = None,
+                   times: Union[slice, float, int] = None
+                   ) -> Union[str, int, float, 'ndarray']:
+    """
+    """
+    
+    # attach index if going to slice into data from path
+    if index is not None:
+        lookup = lambda entry, index : entry[index]
+    else:
+        lookup = lambda entry, index : entry
+
+    # attache time-like slice if provided
+    if times is not None:
+        source = lambda entry, index : entry[index]
+    else:
+        source = lambda entry, index : entry
+
+    # need to work with a filled out DataPath object
+    if path.name is None:
+        raise Exception(f'DataPath.name default of None provided in argument path; must provide path.name!')
+
+    # apply correct lookup semantics based on provided path, times, and index 
+    if path.module in {'fields', 'scalars'}:
+        return lookup(source(getattr(path.data, path.module), times)[path.name], index)[:][0]
+
+    elif path.module in {'dynamics'}:
+        return lookup(source(getattr(path.data, path.module), times)[path.type][path.name], index)
+
+    elif path.module in {'statics'}:
+        return lookup(getattr(path.data, path.module)[path.type][path.name], index)
+
+    elif path.module in {'geometry'}:
+        return lookup(path.data.geometry[path.name], index)
+
+    # cannot work with module provided
+    else:
+        raise Exception(f'DataPath.module provided does not match known objects is path.data object!') 
+
 
 @dataclass
 class NameData:
@@ -53,7 +112,7 @@ class NameData:
         geometry (str): full filename and path for geometry file - calculated
 
     """
-    numbers: Namelist = field(repr=False, init=True, compare=False)
+    numbers: Iterable[Union[int, str]] = field(repr=False, init=True, compare=False)
     directory: str = field(repr=False, init=True, compare=False, default='')
     basename: str = field(repr=False, init=True, compare=False, default='')
     header: str = field(repr=False, init=True, compare=False, default='')
