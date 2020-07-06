@@ -4,12 +4,19 @@
 
 
 from typing import Optional, TYPE_CHECKING
+
+
 from pyioflash.postprocess.utility import StackableMethods, Output, _ingest_source, _make_unwrapper
+
 
 if TYPE_CHECKING:
     from pyioflash.postprocess.utility import Type_Source, Type_Sourceby, Type_Stack, Type_Output
     from pyioflash.simulation.utility import DataPath
 
+
+# define the module api
+def __dir__() -> List[str]:
+    return ["simple"]
 
 
 def simple(source: 'Type_Source', sourceby: Optional['Type_SourceBy'] = None, 
