@@ -28,7 +28,8 @@ if TYPE_CHECKING:
 
 # define the module api
 def __dir__() -> List[str]:
-    return ["velocity_mean"] 
+    return ['velocity_mean'] 
+
 
 def velocity_mean(data: 'SimulationData', steps: Optional['Type_Index'] = slice(None), *,
                   start: Optional['Type_Step'] = None, stop: Optional['Type_Step'] = None, skip: Optional[int] = None,

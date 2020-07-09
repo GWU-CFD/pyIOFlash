@@ -14,7 +14,7 @@ Todo:
 """
 
 
-from typing import Tuple, Dict, Union, Iterable, Optional, TYPE_CHECKING
+from typing import Tuple, List, Dict, Union, Iterable, Optional, TYPE_CHECKING
 
 
 import numpy
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
 # define the module api
 def __dir__() -> List[str]:
-    return ["space_full", "time"]
+    return ['space_full', 'time']
 
 
 def space_full(data: 'SimulationData', field: 'Type_Field', *, 

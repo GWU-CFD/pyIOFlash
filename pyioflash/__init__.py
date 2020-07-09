@@ -3,8 +3,13 @@ Python package for providing methods to import, post-process,
 and visualize simulation data; specifically, FLASH4 HDF5 files
 """
 
+
 # Used to import and handle simulation data
 from pyioflash.simulation import SimulationData
+
+# Used as helper methods for accessing files and data
+from pyioflash.simulation import NameData
+from pyioflash.simulation import DataPath
 
 # Used to post-process simulation data
 from pyioflash.postprocess import sources 

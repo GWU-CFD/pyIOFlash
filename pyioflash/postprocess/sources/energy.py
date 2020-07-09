@@ -11,6 +11,7 @@ This module currently defines the following methods:
     kinetic_turbulant   -> turbulant instantanious kinetic energy
 
 Todo:
+    Consolidate repeated common operations
 
 """
 
@@ -31,7 +32,7 @@ if TYPE_CHECKING:
 
 # define the module api
 def __dir__() -> List[str]:
-    return ["thermal", "kinetic", "kinetic_mean", "kinetic_turbulant"]
+    return ['thermal', 'kinetic', 'kinetic_mean', 'kinetic_turbulant']
 
 
 def thermal(data: 'SimulationData', step: 'Type_Step' = -1, *,
