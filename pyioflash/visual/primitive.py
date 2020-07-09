@@ -6,18 +6,15 @@ Todo:
     None
 """
 
-from dataclasses import dataclass
-from typing import Union
 
-@dataclass
-class Plane:
-    """
-    Data object for defining a 2d cut-plane at a give time for use in plotting
+from functools import partial
 
-    Attributes:
-        time: time or index (e.g., key) associated with the desired plane
-    """
-    time: Union[float, int] = None
-    cut: float = None
-    axis: str = 'z'
+
+import numpy
+from matplotlib import pyplot, cm, colors
+
+
+from pyioflash.visual.options import FigureOptions, PlotOptions
+
+
 

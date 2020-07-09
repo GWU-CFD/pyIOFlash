@@ -8,7 +8,7 @@ To change the default behavior of a specific option, pass a key-value dictionary
 desired options as a keyword argument of the appropriate SimulationPlot instance method.
 """
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, Optional
 
 
 @dataclass
@@ -17,7 +17,7 @@ class FigureOptions:
 
     Attributes:
         title: Figure title; default is blank
-        size: Figure size when multiple plots are requested; NOT USED
+        size_multiple: Figure size when multiple plots are requested;
         size_single: Figure size; default is 11x7
         font_size: Figure title font size; default is 14
         font_face: Figure title font face; default is Cambria
@@ -25,14 +25,14 @@ class FigureOptions:
         show: Show the figure to screen when the show method is used; default is True
         show_differed: Require a call to the show method (do not show after each plot method); default is True
     """
-    title: str = ''
-    size: Tuple[int, int] = (15, 11)  # not used
-    size_single: Tuple[int, int] = (11, 7)
-    font_size: int = 14
-    font_face: str = 'Cambria'
-    save: bool = False  # not used
-    show: bool = True   # not used
-    show_differed: bool = True
+    size_multiple: Tuple[int, int] = (15, 11)
+    size_single: Tuple[int, int] = (15, 11)
+    header: str = ''
+    header_size: int = 14
+    header_face: str = 'DejaVu Sanse'
+    save: bool = False  
+    show: bool = True
+    show_differed: bool = True # Not Used
 
 @dataclass
 class PlotOptions:
@@ -54,20 +54,20 @@ class PlotOptions:
         contours_alpha: Specify the alpha to use when drawing contours: NOT USED
         persist: Plotting options persist between plot methods; default is False
     """
-    title: str = None  # computed default
+    title: str = '' 
     labels: Tuple[str, str, str] = ('x [-]', 'y [-]', 'z [-]')
     font_size: int = 10
-    font_face: str = 'Calibri'
-    type: str = 'contourf'
-    colorbar: bool = True       # not used
-    colorbar_lvls: int = 10     # not used
-    colormap: str = 'viridis'   # not used
-    vrange: Tuple[float, float] = (0.0, 1.0)    # not used
-    vrange_ext: float = 0.0                     # not used
-    vrange_auto: bool = True                    # not used
-    vrange_lvls: int = 21                       # not used
-    contours_skip: int = 2          # not used
-    contours_alpha: float = 0.6     # not used
+    font_face: str = 'DejaVu Sans'
+    plot_type: str = 'density'
+    colorbar: bool = True
+    colorbar_skip: int = 10     
+    colormap: str = 'viridis'   
+    vrange: Optional[Tuple[float, float]] = None
+    vrange_ext: str = 'neither'         
+    vrange_auto: bool = True                    
+    contours_lvls: int = 21                       
+    contours_skip: int = 2          
+    contours_alpha: float = 0.6     
     persist: bool = False
 
 @dataclass

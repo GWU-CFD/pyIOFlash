@@ -3,7 +3,7 @@
 """
 
 
-from typing import Optional, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING
 
 
 from pyioflash.postprocess.utility import StackableMethods, Output, _ingest_source, _make_unwrapper
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 # define the module api
 def __dir__() -> List[str]:
-    return ["simple"]
+    return ['simple']
 
 
 def simple(source: 'Type_Source', sourceby: Optional['Type_SourceBy'] = None, 
@@ -32,8 +32,6 @@ def simple(source: 'Type_Source', sourceby: Optional['Type_SourceBy'] = None,
 
 
     """
-    # specify supported methods
-    methods = StackableMethods
 
     # injest source from provided information 
     result = _ingest_source(source, sourceby, path=path)
@@ -85,7 +83,7 @@ def simple(source: 'Type_Source', sourceby: Optional['Type_SourceBy'] = None,
 
             # Unkown method of stack operation provided
             else:
-                raise ValueError(f"Unsupported method of operation '{method}'; must specify {methods}!")
+                raise ValueError(f"Unsupported method of operation '{method}'; must specify {StackableMethods}!")
 
     return result
 
