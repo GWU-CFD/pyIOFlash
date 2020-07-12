@@ -17,7 +17,7 @@ Jupyter Notebook based examples_ of using the library are also provided.
 .. _examples: https://nbviewer.jupyter.org/github/GWU-CFD/pyIOFlash/tree/release/examples/ 
 
 :Authors:	Aaron Lentner, Akash Dhruv
-:Revision:	1.0.55 (pre-alpha)
+:Revision:	1.0.56 (pre-alpha)
 
 *Needed Feature List*
 

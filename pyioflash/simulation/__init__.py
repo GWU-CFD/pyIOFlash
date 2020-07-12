@@ -10,3 +10,5 @@ from pyioflash.simulation.data import SimulationData
 from pyioflash.simulation.series import NameData
 from pyioflash.simulation.series import DataPath
 
+# Used to assist defining cuts from data
+from pyioflash.simulation.utility import Plane, Line

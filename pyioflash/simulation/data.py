@@ -19,7 +19,8 @@ from pyioflash.simulation.geometry import GeometryData
 from pyioflash.simulation.scalars import ScalarData
 from pyioflash.simulation.series import NameData, DataPath, data_from_path
 from pyioflash.simulation.statics import StaticData
-from pyioflash.simulation.utility import _blocks_from_plane, _blocks_from_line
+from pyioflash.simulation.utility import _blocks_from_plane, _blocks_from_line, _cut_from_plane
+from pyioflash.simulation.utility import Plane, Line
 from pyioflash.simulation.utility import _get_indices, _get_times, _reduce_str, open_hdf5
 
 
@@ -269,10 +270,10 @@ class Utility:
             Intersections are treated as the open interval, lows <= values < highs.
 
         Todo:
-            Add support for none axis alined normals and points
+            Add support for non axis alined normals and points
 
         """
-        return _blocks_from_line(self._geometry, axes, values)
+        return _blocks_from_line(self._geometry, Line(axes, values))
 
     def blocks_from_plane(self, axis: str = 'z', value: float = 0.0) -> List[int]:
         """
@@ -286,10 +287,36 @@ class Utility:
             Intersections are treated as the open interval, low <= value < high.
 
         Todo:
-            Add support for none axis alined normals and points
+            Add support for non axis alined normals and points
 
         """
-        return _blocks_from_plane(self._geometry, axis, value)
+        return _blocks_from_plane(self._geometry, Plane(axis, value))
+
+    def cut_from_plane(self, axis: str = 'z', value: float = 0.0, face: int = 1, *,
+                       blocks: Optional[List[int]] = None, withguard: bool = False) -> Tuple[int, float]:
+        """
+        Provides a index and associated value of the grid in the blocks which are intersected 
+        by the provided plane, axis = value.
+
+        Attributes:
+            blocks: blocks intersected by the plane (optional)
+            axis: named normal axis of the desired plane (optional)
+            value: point which defines the plane (optional)
+            face: desired face on which the grid sits (optional)
+
+        Note:
+            index corrisponds to the closest without exceeding grid value
+
+        Todo:
+            Add support for providing interpolation between points
+
+        """
+        if blocks is None:
+            blocks = self.blocks_from_plane(axis, value)
+        g = 0 if not withguard else int(self._geometry.blk_guards / 2)
+        index, value = _cut_from_plane(self._geometry, blocks, Plane(axis, value, face))
+        return index + g, value
+
 
     def data_from_path(self, module: str, name: str, *,
                        sub: Optional[str] = None,

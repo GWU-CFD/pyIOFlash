@@ -10,4 +10,4 @@ and process FLASH4 HDF5 plt and chk files
 from pyioflash.visual.options import FigureOptions, PlotOptions, AnimationOptions
 
 # Used to assist in defining ploting constructs
-from pyioflash.visual.primitive import Plane
+from pyioflash.visual.plot import _simple_plot2D 

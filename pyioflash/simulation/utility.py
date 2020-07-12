@@ -7,26 +7,76 @@ Todo:
 """
 
 
+from dataclasses import dataclass
 from contextlib import contextmanager
 from typing import Any, Tuple, List, Iterable, Union, Callable, TYPE_CHECKING
 
 
 import h5py
-
+import numpy
 
 if TYPE_CHECKING:
     from pyioflash.simulation.collections import SortedDict
     from pyioflash.simulation.geometry import GeometryData
 
+_map_faces = {'lower': 0, 'center': 1, 'upper': 2}
+_map_axes = {'x': 0, 'y': 1, 'z': 2}
+_map_mesh = {'x': 'grd_mesh_x', 'y': 'grd_mesh_y', 'z': 'grd_mesh_z'}
+_map_pnts = {'x': lambda face, block : numpy.index_exp[face, block, 0, 0, :],
+             'y': lambda face, block : numpy.index_exp[face, block, 0, :, 0],
+             'z': lambda face, block : numpy.index_exp[face, block, :, 0, 0]}
+_map_mesh_axes = {'x': (1, 2), 'y': (0, 2), 'z': (0, 1)}
+_map_mesh_grid = {'x': ('_grd_mesh_y', '_grd_mesh_z'),
+                  'y': ('_grd_mesh_x', '_grd_mesh_z'),
+                  'z': ('_grd_mesh_x', '_grd_mesh_y')}
+_map_grid_inds = {'x': lambda face, block, index : numpy.index_exp[face, block, :, :, index],
+                  'y': lambda face, block, index : numpy.index_exp[face, block, :, index, :],
+                  'z': lambda face, block, index : numpy.index_exp[face, block, index, :, :]}
 
-def _blocks_from_plane(data: 'GeometryData', axis: str, value: float) -> List[int]:
+
+# define the module api
+def __dir__() -> List[str]:
+    return ['Line', 'Plane']
+
+
+@dataclass
+class Line:
+    """
+    """
+    axes: Tuple[str, str] = ('y', 'z')
+    cuts: Tuple[float, float] = (0.0, 0.0)
+
+    def __post__init__(self):
+        if not all(axis in _map_axes for axis in self.axes):
+            raise ValueError(f'Line axes must be a coordinate directions; not {self.axes}')
+
+
+@dataclass
+class Plane:
+    """
+    """
+    axis: str = 'z'
+    cut: float = 0.0
+    face: int = 1
+
+    def __post_init__(self):
+        if self.axis not in _map_axes.keys():
+            raise ValueError(f'Plane axis must be a coordinate direction; not {self.axis}')
+        if self.face not in _map_axes.values():
+            raise ValueError(f'Plane face must be one of {_map_faces.values()}; not {self.face}')
+
+
+def _blocks_from_plane(data: 'GeometryData', plane: Plane)-> List[int]:
     """Returns a list of block indices (using geometry data) which intersect a provided plane"""
 
     # define intersection truth function
     within = lambda low, high, check: low <= check and check < high
-    
+
+    # unpack plane object
+    axis, value = plane.axis, plane.cut
+
     # define axis of provided plane and retrieve bounding boxes
-    index = {axis: index for index, axis in enumerate(['x', 'y', 'z'])}[axis]
+    index = _map_axes[axis]
     boxes = data.blk_bndbox[:, index, :]
  
     # return blocks which are intersected by plane; open interval value in [low, high)
@@ -36,16 +86,18 @@ def _blocks_from_plane(data: 'GeometryData', axis: str, value: float) -> List[in
         return [block for block, box in enumerate(boxes) if within(*(tuple(box) + (value, )))]
 
 
-def _blocks_from_line(data: 'GeometryData', axes: Tuple[str], values: Tuple[float]) -> List[int]:
+def _blocks_from_line(data: 'GeometryData', line: Line) -> List[int]:
     """Returns a list of block indices (using geometry data) which intersect a provided line"""
 
     # define intersection truth function
     within = lambda low, high, check: low <= check and check < high
 
+    # unpack line object
+    axes, values = line.axes, line.values
+
     # define axes of provided line and retrive bounding boxes
-    mapping = {axis: index for index, axis in enumerate(['x', 'y', 'z'])}
-    boxes0 = data.blk_bndbox[:, mapping[axes[0]], :]
-    boxes1 = data.blk_bndbox[:, mapping[axes[1]], :]
+    indices = [_map_axes[axis] for axis in axes]
+    boxes0, boxes1 = [data.blk_bndbox[:, index, :] for index in indices]
 
     # return blocks which are intersected by a line; open interval values in [lows, highs)
     if data.grd_dim == 2 and 'z' in axes:  # open interval results in empty set for z-axis in 2d
@@ -54,6 +106,26 @@ def _blocks_from_line(data: 'GeometryData', axes: Tuple[str], values: Tuple[floa
     else:
         return [block for block, (box0, box1) in enumerate(zip(boxes0, boxes1)) 
                 if within(*(tuple(box0) + (values[0], ))) and within(*(tuple(box1) + (values[1], )))]
+
+
+def _cut_from_plane(data: 'GeometryData', blocks: List[int], plane: Plane) -> Tuple[int, float]:
+    """Returns an index and grid value (using geometry and blocks) which intersect provided plane"""
+
+    # unpack plane object
+    axis, value, face = plane.axis, plane.cut, plane.face
+
+    # get line of points aligned to axis
+    grid = _map_mesh[axis]
+    inds = _map_pnts[axis](face, blocks[0])
+    points = data[grid][inds]
+
+    # get the index corrisponding to the plane value
+    try:
+        index = max(_first_true(enumerate(points), lambda point: point[1] > value)[0] - 1, 0)
+    except StopIteration:
+        index = len(points) - 1
+    return index, points[index]
+
 
 def _first_true(iterable: Iterable, predictor: Callable[..., bool]) -> Any:
     """Returns the first true value in the iterable according to predictor."""
