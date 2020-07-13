@@ -26,12 +26,19 @@ _map_pnts = {'x': lambda face, block : numpy.index_exp[face, block, 0, 0, :],
              'y': lambda face, block : numpy.index_exp[face, block, 0, :, 0],
              'z': lambda face, block : numpy.index_exp[face, block, :, 0, 0]}
 _map_mesh_axes = {'x': (1, 2), 'y': (0, 2), 'z': (0, 1)}
-_map_mesh_grid = {'x': ('_grd_mesh_y', '_grd_mesh_z'),
-                  'y': ('_grd_mesh_x', '_grd_mesh_z'),
-                  'z': ('_grd_mesh_x', '_grd_mesh_y')}
+_map_mesh_grid = {True: {'x': ('_grd_mesh_y', '_grd_mesh_z'),
+                         'y': ('_grd_mesh_x', '_grd_mesh_z'),
+                         'z': ('_grd_mesh_x', '_grd_mesh_y')},
+                  False: {'x': ('grd_mesh_y', 'grd_mesh_z'),
+                          'y': ('grd_mesh_x', 'grd_mesh_z'),
+                          'z': ('grd_mesh_x', 'grd_mesh_y')}}
 _map_grid_inds = {'x': lambda face, block, index : numpy.index_exp[face, block, :, :, index],
                   'y': lambda face, block, index : numpy.index_exp[face, block, :, index, :],
                   'z': lambda face, block, index : numpy.index_exp[face, block, index, :, :]}
+_map_data_inds = {'x': lambda index : numpy.index_exp[:, :, index],
+                  'y': lambda index : numpy.index_exp[:, index, :],
+                  'z': lambda index : numpy.index_exp[index, :, :]}
+
 
 
 # define the module api

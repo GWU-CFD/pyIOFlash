@@ -1,11 +1,11 @@
-"""A python module for providing optional behavior for the SimulationPlot class.
+"""A python module for providing optional behavior for the visual subpackage of pyioflash.
 
 The classes provided in this module define the default and modifiable options specifying the
-behavior of the SimulationPlot class plotting operations. The options are segregated between
+behavior of the visual subpackage plotting operations. The options are segregated between
 figure wide and plot specific options.
 
 To change the default behavior of a specific option, pass a key-value dictionary containing the
-desired options as a keyword argument of the appropriate SimulationPlot instance method.
+desired options as a keyword argument of the appropriate plotting methods.
 """
 
 
@@ -36,11 +36,13 @@ def __dir__() -> List[str]:
 
 def _contour(ax: 'Type_Axis', x: 'Type_Array', y: 'Type_Array', z: 'Type_Array', 
               **kwargs) -> 'Type_Contour':
+    """Defines the wrapper around matplotlib.pyplot.contour method"""
     return ax.contour(x[1:,1:], y[1:,1:], z[1:,1:], **kwargs)
 
 
 def _contourp(ax: 'Type_Axis', x: 'Type_Array', y: 'Type_Array', z: 'Type_Array', 
               **kwargs) -> 'Type_Contour':
+    """Defines the wrapper around matplotlib.pyplot.contour(f) methods"""
     ax.contour(x[1:,1:], y[1:,1:], z[1:,1:], alpha=1.0, **kwargs)
     return ax.contourf(x[1:,1:], y[1:,1:], z[1:,1:], alpha=0.5, **kwargs)
 
