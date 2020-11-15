@@ -20,3 +20,6 @@
 # jupyter notebook checkpoints
 /examples/.ipynb_checkpoints
 pyioflash/legacy/.ipynb_checkpoints
+
+# temporary files
+*.swp

@@ -21,41 +21,53 @@ if TYPE_CHECKING:
 
 # define the module api
 def __dir__() -> List[str]:
-    return ['calc_coords', 'write_coords']
+    return ['calc_coords', 'get_blocks', 'write_coords']
 
-def calc_coords(*, guard: Dict[str, int], param: Dict[str, Dict[str, Union[int, float]]],
-                procs: Dict[str, int], simmn: Dict[str, float], simmx: Dict[str, float], 
-                sizes: Dict[str, int], stype: Dict[str, str], ndims: int = 2) -> Tuple['NDA', 'NDA', 'NDA', 
-                                                                                       'NDA', 'NDA', 'NDA']:
+def calc_coords(*, param: Dict[str, Dict[str, Union[int, float]]], procs: Dict[str, int] = {},
+                simmn: Dict[str, float], simmx: Dict[str, float], sizes: Dict[str, int], 
+                stype: Dict[str, str], ndims: int = 2) -> Tuple['NDA', 'NDA', 'NDA']:
 
     # create grid init parameters
+    create_indexSize = create_indexSize_fromGlobal if procs == {} else create_indexSize_fromLocal
     gr_axisNumProcs, gr_axisMesh = create_processor_grid(**procs)
-    gr_guard = create_guards(**guard)
     gr_min, gr_max = create_bounds(mins=simmn, maxs=simmx)
+    gr_lIndexSize, gr_gIndexSize = create_indexSize(**sizes, ijkProcs=gr_axisNumProcs)
+    gr_ndim = ndims
 
     # create grid stretching parameters
     gr_strBool, gr_strType = create_stretching(methods=stype)
     gr_str = Stretching(gr_strType, Parameters(**param))
 
-    # create grid index parameters as in GRID/UG/RegularGrid
-    gr_ndim = ndims
-    gr_lIndexSize, gr_gIndexSize = create_indexSize_fromLocal(**sizes, ijkProcs=gr_axisNumProcs)
-    gr_loGc, gr_lo, gr_hi, gr_hiGc = get_blockPoints(lSizes=gr_lIndexSize, ndim=gr_ndim,
-                                                     gSizes=gr_gIndexSize, guards=gr_guard)
-
     # Create grids
-    gr_coords, gr_coordsGlb = get_blockCoords(axisMesh=gr_axisMesh, guards=gr_guard, gSizes=gr_gIndexSize, 
-                                              hiGc=gr_hiGc, loGc=gr_loGc, lSizes=gr_lIndexSize, 
-                                              methods=gr_str, ndim=gr_ndim, smin=gr_min, smax=gr_max)
+    return tuple(get_filledCoords(sizes=gr_gIndexSize, methods=gr_str, ndim=gr_ndim, smin=gr_min, smax=gr_max))
 
+def get_blocks(*, procs: Dict[str, int], sizes: Dict[str, int], 
+               coordinates: Tuple['NDA', 'NDA', 'NDA']) -> Tuple[Tuple['NDA', 'NDA', 'NDA'], 
+                                                                 Tuple['NDA', 'NDA', 'NDA'],
+                                                                 Tuple['NDA', 'NDA', 'NDA']]:
 
-    gr_iCoords, gr_jCoords, gr_kCoords = get_shapedCoords(coords=gr_coords)
-    gr_iCoordsGlb, gr_jCoordsGlb, gr_kCoordsGlb = get_shapedCoords(coords=gr_coordsGlb, local=False)
-    
-    return gr_iCoords, gr_jCoords, gr_kCoords, gr_iCoordsGlb, gr_jCoordsGlb, gr_kCoordsGlb
+    # get the processor communicator layout and global arrays
+    _, gr_axisMesh = create_processor_grid(**procs)
+    xfaces, yfaces, zfaces = coordinates
 
-def write_coords(*, coordinates: Tuple['NDA', 'NDA', 'NDA', 'NDA', 'NDA', 'NDA'],
-                 path: str = '') -> None:
+    # calculate the iaxis block coordinates
+    xxxl = numpy.array([xfaces[0 + i * sizes['i']:0 + (i + 1) * sizes['i']] for i, _, _ in gr_axisMesh])
+    xxxr = numpy.array([xfaces[1 + i * sizes['i']:1 + (i + 1) * sizes['i']] for i, _, _ in gr_axisMesh])
+    xxxc = (xxxr + xxxl) / 2.0
+
+    # calculate the jaxis block coordinates
+    yyyl = numpy.array([yfaces[0 + j * sizes['j']:0 + (j + 1) * sizes['j']] for _, j, _ in gr_axisMesh])
+    yyyr = numpy.array([yfaces[1 + j * sizes['j']:1 + (j + 1) * sizes['j']] for _, j, _ in gr_axisMesh])
+    yyyc = (yyyr + yyyl) / 2.0
+
+    # calculate the kaxis block coordinates
+    zzzl = numpy.array([zfaces[0 + k * sizes['k']:0 + (k + 1) * sizes['k']] for _, _, k in gr_axisMesh])
+    zzzr = numpy.array([zfaces[1 + k * sizes['k']:1 + (k + 1) * sizes['k']] for _, _, k in gr_axisMesh])
+    zzzc = (zzzr + zzzl) / 2.0
+
+    return (xxxl, xxxc, xxxr), (yyyl, yyyc, yyyr), (zzzl, zzzc, zzzr)
+
+def write_coords(*, coordinates: Tuple['NDA', 'NDA', 'NDA'], path: str = '') -> None:
 
     # specify path
     cwd = os.getcwd()
@@ -68,10 +80,8 @@ def write_coords(*, coordinates: Tuple['NDA', 'NDA', 'NDA', 'NDA', 'NDA', 'NDA']
     with h5py.File(filename, 'w') as h5file:
         
         # write data to file
-        for n, (axis, coords) in enumerate(zip(['x', 'y', 'z']*2, coordinates)): 
-            for face, data in zip(('l', 'c', 'r'), coords):
-                name = 'blk' if n < 3 else 'glb'
-                h5file.create_dataset(axis + name + face, data=data)
+        for axis, coords in zip(('x', 'y', 'z'), coordinates): 
+            h5file.create_dataset(axis + 'Faces', data=coords)
 
 def create_bounds(*, mins: Dict[str, float]={}, maxs: Dict[str, float]={}):
     def_mins = {key: 0.0 for key in ('i', 'j', 'k')}
@@ -79,9 +89,6 @@ def create_bounds(*, mins: Dict[str, float]={}, maxs: Dict[str, float]={}):
     simmn = [mins.get(key, default) for key, default in def_mins.items()]
     simmx = [maxs.get(key, default) for key, default in def_maxs.items()]
     return tuple(numpy.array(item, float) for item in (simmn, simmx))
-
-def create_guards(*, i: int = 1, j: int  = 1, k: int  = 1):
-    return numpy.array([i, j, k], int)
 
 def create_indexSize_fromGlobal(*, i: int  = 1, j: int  = 1, k: int  = 1, ijkProcs: 'NDA'):
     gSizes = [i, j, k]
@@ -106,59 +113,17 @@ def create_stretching(*, methods: Dict[str, str] = {}):
     strBools = [method == default for method in strTypes]
     return tuple(numpy.array(item) for item in (strBools, strTypes))
 
-def get_blankCoords(*, gSizes: 'NDA', hiGc: 'NDA', loGc: 'NDA') -> Tuple['NDA', 'NDA']:
-    coords = [numpy.zeros((3, high - low + 1, 1)) for high, low in zip(hiGc, loGc)]
-    coordsGlb = [numpy.zeros((3, high, 1)) for high in gSizes]
-    return coords, coordsGlb
+def get_blankCoords(sizes: 'NDA') -> List['NDA']:
+    return [None] * len(sizes)
 
-def get_blockCoords(*, axisMesh: 'NDA', guards: 'NDA', gSizes: 'NDA', hiGc: 'NDA',
-                    loGc: 'NDA', lSizes: 'NDA', methods: 'Stretching', ndim: int,
-                    smin: 'NDA', smax: 'NDA') -> Tuple[List[List['NDA']], List[List['NDA']]]:
-    # Create grids
-    gr_coords = []
-    for meshMe, axisMe in enumerate(axisMesh):
+def get_filledCoords(*, sizes: 'NDA', methods: 'Stretching', ndim: int, smin: 'NDA', smax: 'NDA') -> List['NDA']:
+    coords = get_blankCoords(sizes)
 
-        #store lower left global index for each dim
-        cornerID = get_blockCornerID(axisMe=axisMe, lSizes=lSizes)
+    for method, func in methods.stretch.items():
+        if methods.any_axes(method):
+            func(axes=methods.map_axes(method), coords=coords, sizes=sizes, ndim=ndim, smin=smin, smax=smax)
 
-        # Now create the grid and coordinates etc
-        coords, coordsGlb = get_blankCoords(gSizes=gSizes, hiGc=hiGc, loGc=loGc, )
-
-        for method, func in methods.stretch.items():
-            if methods.any_axes(method):
-                func(meshMe=meshMe, axes=methods.map_axes(method), coords=coords, coordsGlb=coordsGlb,
-                     cornerID=cornerID, guards=guards, gSizes=gSizes, hiGc=hiGc, loGc=loGc,
-                     ndim=ndim, smin=smin, smax=smax)
-
-        gr_coords.append(coords)
-        if meshMe == 0:
-            gr_coordsGlb = coordsGlb
-
-    return gr_coords, gr_coordsGlb
-
-def get_blockCornerID(*, axisMe: 'NDA', lSizes: 'NDA') -> int:
-    return axisMe * lSizes + 1
-
-def get_blockPoints(*, ndim: int, guards: 'NDA', gSizes: 'NDA', lSizes: 'NDA'
-                   ) -> Tuple['NDA', 'NDA', 'NDA', 'NDA']:
-    loGc = numpy.ones(MDIM, int) * 1
-    lo = loGc + guards
-    hi = lo + lSizes - 1
-    hiGc = hi + guards
-    for axis in range(ndim, MDIM):
-        loGc[axis] = 1
-        lo[axis] = 1
-        hi[axis] = 1
-        hiGc[axis] = 1
-        guards[axis] = 0
-        gSizes[axis] = 1
-    return loGc, lo, hi, hiGc
-
-def get_shapedCoords(*, coords: List[List['NDA']], local: bool=True) -> Tuple['NDA', 'NDA', 'NDA']:
-    if local:
-        return [numpy.array([[block[n][f, :, 0] for block in coords] for f in range(3)]) for n in range(3)]
-    else:
-        return [numpy.array([coords[n][f, :, 0] for f in range(3)]) for n in range(3)]
+    return coords
 
 @dataclass
 class Parameters:
