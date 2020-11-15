@@ -298,27 +298,33 @@ class GeometryData(_BaseData):
             with open_hdf5(gridfilename, 'r') as gridfile:
 
                 for face, name in enumerate(grids["x"]):
-                    self._grd_mesh_x[face, :, g:-g, g:-g, g:-g] = gridfile[name][()]
+                    self._grd_mesh_x[face, :, g:-g, g:-g, g:-g] = gridfile[name][()].reshape(
+                        self.blk_num, 1, 1, self.blk_size_x).repeat(self.blk_size_y, axis=2).repeat(self.blk_size_z, axis=1)
                     GeometryData._fill_guard(self._grd_mesh_x[face, :, :, :, :], self, name)
 
                 for face, name in enumerate(grids["y"]):
-                    self._grd_mesh_y[face, :, g:-g, g:-g, g:-g] = gridfile[name][()]
+                    self._grd_mesh_y[face, :, g:-g, g:-g, g:-g] = gridfile[name][()].reshape(
+                        self.blk_num, 1, self.blk_size_y, 1).repeat(self.blk_size_x, axis=3).repeat(self.blk_size_z, axis=1)
                     GeometryData._fill_guard(self._grd_mesh_y[face, :, :, :, :], self, name)
 
                 for face, name in enumerate(grids["z"]):
-                    self._grd_mesh_z[face, :, g:-g, g:-g, g:-g] = gridfile[name][()]
+                    self._grd_mesh_z[face, :, g:-g, g:-g, g:-g] = gridfile[name][()].reshape(
+                        self.blk_num, self.blk_size_z, 1, 1).repeat(self.blk_size_x, axis=3).repeat(self.blk_size_y, axis=2)
                     GeometryData._fill_guard(self._grd_mesh_z[face, :, :, :, :], self, name)
 
                 for face, name in enumerate(grids["ddx"]):
-                    self._grd_mesh_ddx[face, :, g:-g, g:-g, g:-g] = gridfile[name][()]
+                    self._grd_mesh_ddx[face, :, g:-g, g:-g, g:-g] = gridfile[name][()].reshape(
+                        self.blk_num, 1, 1, self.blk_size_x).repeat(self.blk_size_y, axis=2).repeat(self.blk_size_z, axis=1)
                     GeometryData._fill_guard(self._grd_mesh_ddx[face, :, :, :, :], self, name)
 
                 for face, name in enumerate(grids["ddy"]):
-                    self._grd_mesh_ddy[face, :, g:-g, g:-g, g:-g] = gridfile[name][()]
+                    self._grd_mesh_ddy[face, :, g:-g, g:-g, g:-g] = gridfile[name][()].reshape(
+                        self.blk_num, 1, self.blk_size_y, 1).repeat(self.blk_size_x, axis=3).repeat(self.blk_size_z, axis=1)
                     GeometryData._fill_guard(self._grd_mesh_ddy[face, :, :, :, :], self, name)
 
                 for face, name in enumerate(grids["ddz"]):
-                    self._grd_mesh_ddz[face, :, g:-g, g:-g, g:-g] = gridfile[name][()]
+                    self._grd_mesh_ddz[face, :, g:-g, g:-g, g:-g] = gridfile[name][()].reshape(
+                        self.blk_num, self.blk_size_z, 1, 1).repeat(self.blk_size_x, axis=3).repeat(self.blk_size_y, axis=2)
                     GeometryData._fill_guard(self._grd_mesh_ddz[face, :, :, :, :], self, name)
 
         elif self.grd_type == 'paramesh':
