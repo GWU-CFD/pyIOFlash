@@ -110,7 +110,7 @@ def simple(*, lowpath: str, hghpath: str, basename: str, header: str, low: int, 
         os.remove(filename)
 
     # create hdf5 file
-    with h5py.File(filename) as h5file:
+    with h5py.File(filename, 'r') as h5file:
 
         # write data to file
         for field, data in zip(names.keys(), grids.values()):
