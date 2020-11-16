@@ -7,3 +7,6 @@ from pyioflash.preprocess.chaining import domain
 
 # Used to .....
 from pyioflash.preprocess.chaining import initial
+
+# Used to .....
+from pyioflash.preprocess.chaining import interpolate
