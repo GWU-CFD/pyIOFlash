@@ -17,11 +17,11 @@ def __dir__() -> List[str]:
     return ['simple']
 
 epsilon = 0.0
-termwid = 100
+termwid = 120
 
-def screen_out(*, message: str, percent: float) -> None:
-    total = 20
-    progress = '  [' + '#' * int(total * percent) + '-' * int(total * (1 - percent)) + ']'
+def screen_out(*, message: str, inner: float, outer: float) -> None:
+    total = 16
+    progress = '  [' + '#' * int(total * inner) + '-' * int(total * (1 - inner)) + ']' + f' with {100*outer:0.1f}% Complete'
     message = message + progress
     stdout.write('\r' + message.ljust(termwid, ' '))
     stdout.flush()
@@ -50,20 +50,20 @@ def simple(*, lowpath: str, hghpath: str, basename: str, header: str, low: int, 
         blocks = _blocks_from_bbox(lowdata, bbox)
     
         message = f'Interpolating blocks for block {block} are {blocks}'
-        screen_out(message=message, percent=0.05)
+        screen_out(message=message, inner=0.05, outer=(block + 0.05)/hghdata.blk_num)
 
         xxxc = lowdata._grd_mesh_x[1, blocks, :, :, :]
         yyyc = lowdata._grd_mesh_y[1, blocks, :, :, :]
         zzzc = lowdata._grd_mesh_z[1, blocks, :, :, :]
-        screen_out(message=message, percent=0.10)
+        screen_out(message=message, inner=0.10, outer=(block + 0.10)/hghdata.blk_num)
 
         xxxr = lowdata._grd_mesh_x[2, blocks, :, :, :]
         yyyr = lowdata._grd_mesh_y[2, blocks, :, :, :]
         zzzr = lowdata._grd_mesh_z[2, blocks, :, :, :]
-        screen_out(message=message, percent=0.15)
+        screen_out(message=message, inner=0.15, outer=(block + 0.15)/hghdata.blk_num)
     
         fields = {name: value for name, value in zip(names.keys(), lowvals[list(names.values())][0, blocks, :, :, :])}
-        screen_out(message=message, percent=0.20)
+        screen_out(message=message, inner=0.20, outer=(block + 0.20)/hghdata.blk_num)
         
         # Interpolate Temperature
         x = hghdata._grd_mesh_x[1, block, :, :, :]
@@ -72,7 +72,7 @@ def simple(*, lowpath: str, hghpath: str, basename: str, header: str, low: int, 
         points = numpy.array([[i, j, k] for i, j, k in zip(xxxc.ravel(), yyyc.ravel(), zzzc.ravel())])     
         values = fields['temp'].ravel()
         grids['temp'].append(griddata(points, values, (x, y, z), method=method))
-        screen_out(message=message, percent=0.40)
+        screen_out(message=message, inner=0.40, outer=(block + 0.40)/hghdata.blk_num)
     
         # Interpolate faceX
         x = hghdata._grd_mesh_x[2, block, :, :, :]
@@ -81,7 +81,7 @@ def simple(*, lowpath: str, hghpath: str, basename: str, header: str, low: int, 
         points = numpy.array([[i, j, k] for i, j, k in zip(xxxr.ravel(), yyyc.ravel(), zzzc.ravel())])     
         values = fields['velx'].ravel()
         grids['velx'].append(griddata(points, values, (x, y, z), method=method))
-        screen_out(message=message, percent=0.60)
+        screen_out(message=message, inner=0.60, outer=(block + 0.60)/hghdata.blk_num)
     
         # Interpolate faceY
         x = hghdata._grd_mesh_x[1, block, :, :, :]
@@ -90,7 +90,7 @@ def simple(*, lowpath: str, hghpath: str, basename: str, header: str, low: int, 
         points = numpy.array([[i, j, k] for i, j, k in zip(xxxc.ravel(), yyyr.ravel(), zzzc.ravel())])     
         values = fields['vely'].ravel()
         grids['vely'].append(griddata(points, values, (x, y, z), method=method))
-        screen_out(message=message, percent=0.80)
+        screen_out(message=message, inner=0.80, outer=(block + 0.80)/hghdata.blk_num)
 
         # Interpolate faceZ
         x = hghdata._grd_mesh_x[1, block, :, :, :]
@@ -99,7 +99,7 @@ def simple(*, lowpath: str, hghpath: str, basename: str, header: str, low: int, 
         points = numpy.array([[i, j, k] for i, j, k in zip(xxxc.ravel(), yyyc.ravel(), zzzr.ravel())])
         values = fields['velz'].ravel()
         grids['velz'].append(griddata(points, values, (x, y, z), method=method))
-        screen_out(message=message, percent=1.00)
+        screen_out(message=message, inner=1.00, outer=(block + 1.00)/hghdata.blk_num)
 
     # repackage list of blocks as numpy array
     grids = {key: numpy.array(value)[:, :, :, :] for key, value in grids.items()} 
@@ -110,7 +110,7 @@ def simple(*, lowpath: str, hghpath: str, basename: str, header: str, low: int, 
         os.remove(filename)
 
     # create hdf5 file
-    with h5py.File(filename, 'r') as h5file:
+    with h5py.File(filename, 'w') as h5file:
 
         # write data to file
         for field, data in zip(names.keys(), grids.values()):

@@ -24,14 +24,13 @@ def __dir__() -> List[str]:
     return ['calc_coords', 'get_blocks', 'write_coords']
 
 def calc_coords(*, param: Dict[str, Dict[str, Union[int, float]]], procs: Dict[str, int] = {},
-                simmn: Dict[str, float], simmx: Dict[str, float], sizes: Dict[str, int], 
+                simmn: Dict[str, float], simmx: Dict[str, float], sizes: Dict[str, int] = {}, 
                 stype: Dict[str, str], ndims: int = 2) -> Tuple['NDA', 'NDA', 'NDA']:
 
     # create grid init parameters
-    create_indexSize = create_indexSize_fromGlobal if procs == {} else create_indexSize_fromLocal
     gr_axisNumProcs, gr_axisMesh = create_processor_grid(**procs)
     gr_min, gr_max = create_bounds(mins=simmn, maxs=simmx)
-    gr_lIndexSize, gr_gIndexSize = create_indexSize(**sizes, ijkProcs=gr_axisNumProcs)
+    gr_lIndexSize, gr_gIndexSize = create_indexSize_fromLocal(**sizes, ijkProcs=gr_axisNumProcs)
     gr_ndim = ndims
 
     # create grid stretching parameters
@@ -41,13 +40,14 @@ def calc_coords(*, param: Dict[str, Dict[str, Union[int, float]]], procs: Dict[s
     # Create grids
     return tuple(get_filledCoords(sizes=gr_gIndexSize, methods=gr_str, ndim=gr_ndim, smin=gr_min, smax=gr_max))
 
-def get_blocks(*, procs: Dict[str, int], sizes: Dict[str, int], 
+def get_blocks(*, procs: Dict[str, int] = {}, sizes: Dict[str, int] = {}, 
                coordinates: Tuple['NDA', 'NDA', 'NDA']) -> Tuple[Tuple['NDA', 'NDA', 'NDA'], 
                                                                  Tuple['NDA', 'NDA', 'NDA'],
                                                                  Tuple['NDA', 'NDA', 'NDA']]:
 
     # get the processor communicator layout and global arrays
-    _, gr_axisMesh = create_processor_grid(**procs)
+    gr_axisNumProcs, gr_axisMesh = create_processor_grid(**procs)
+    gr_lIndexSize, gr_gIndexSize = create_indexSize_fromLocal(**sizes, ijkProcs=gr_axisNumProcs)
     xfaces, yfaces, zfaces = coordinates
 
     # calculate the iaxis block coordinates
@@ -66,6 +66,20 @@ def get_blocks(*, procs: Dict[str, int], sizes: Dict[str, int],
     zzzc = (zzzr + zzzl) / 2.0
 
     return (xxxl, xxxc, xxxr), (yyyl, yyyc, yyyr), (zzzl, zzzc, zzzr)
+
+def get_shapes(*, procs: Dict[str, int] = {}, sizes: Dict[str, int] = {}) -> Dict[str, Tuple[int, int, int]]:
+
+    # get the processor communicator layout and global arrays
+    gr_axisNumProcs, gr_axisMesh = create_processor_grid(**procs)
+    gr_lIndexSize, gr_gIndexSize = create_indexSize_fromLocal(**sizes, ijkProcs=gr_axisNumProcs)
+   
+    # create shape data as dictionary
+    shapes = {'center': tuple([gr_axisNumProcs.prod()] + gr_lIndexSize[::-1].tolist())}
+    shapes['facex'] = tuple([gr_axisNumProcs.prod()] + list(gr_lIndexSize[::-1] + (0, 0, 1))) 
+    shapes['facey'] = tuple([gr_axisNumProcs.prod()] + list(gr_lIndexSize[::-1] + (0, 1, 0))) 
+    shapes['facez'] = tuple([gr_axisNumProcs.prod()] + list(gr_lIndexSize[::-1] + (1, 0, 0))) 
+    
+    return shapes
 
 def write_coords(*, coordinates: Tuple['NDA', 'NDA', 'NDA'], path: str = '') -> None:
 

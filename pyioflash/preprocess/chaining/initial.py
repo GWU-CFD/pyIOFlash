@@ -36,18 +36,18 @@ def calc_flowField(*, blocks: 'blocks', procs: Dict[str, int],
 
     return fields
 
-def write_flowField(*, fields: Dict[str, 'NDA'], path: str = '', filename: str = 'initBlock.h5') -> None:
+def write_flowField(*, fields: Dict[str, 'NDA'], shapes: Dict[str, Tuple[int, int, int]], 
+                    path: str = '', filename: str = 'initBlock.h5') -> None:
     
     # define supported input fields
-    defaults = {'velx', 'vely', 'velz', 'temp'}
+    defaults = {'velx': 'facex', 'vely': 'facey', 'velz': 'facez', 'temp': 'center'}
 
     # auto fill missing supported fields
     keys = fields.keys()
     first = next(iter(fields))
-    for default in defaults:
+    for default, shape in defaults.items():
         if default not in keys:
-            fields[default] = numpy.zeros_like(fields[first])
-
+            fields[default] = numpy.zeros(shapes[shape], dtype=float)
 
     # specify path and filename
     filename = os.getcwd() + '/' + path + filename
