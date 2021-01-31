@@ -9,7 +9,7 @@ import numpy
 import h5py
 import os
 
-from pyioflash.preprocess.chaining.flows import rb_plume3d
+from pyioflash.preprocess.chaining.flows import rb_plume3d, rb_plume2d
 
 if TYPE_CHECKING:
     NDA = numpy.ndarray
@@ -23,7 +23,7 @@ def calc_flowField(*, blocks: 'blocks', procs: Dict[str, int],
                    method: Union[str, Callable], options: Dict[str, Any] = {}) -> Dict[str, 'NDA']:
 
     # define available default methods
-    methods = {'rb_plume3d': rb_plume3d}
+    methods = {'rb_plume3d': rb_plume3d, 'rb_plume2d': rb_plume2d}
 
     if isinstance(method, str):
         fields = methods[method](blocks=blocks, procs=procs, **options)

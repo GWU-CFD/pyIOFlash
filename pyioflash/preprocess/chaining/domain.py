@@ -61,9 +61,12 @@ def get_blocks(*, procs: Dict[str, int] = {}, sizes: Dict[str, int] = {},
     yyyc = (yyyr + yyyl) / 2.0
 
     # calculate the kaxis block coordinates
-    zzzl = numpy.array([zfaces[0 + k * sizes['k']:0 + (k + 1) * sizes['k']] for _, _, k in gr_axisMesh])
-    zzzr = numpy.array([zfaces[1 + k * sizes['k']:1 + (k + 1) * sizes['k']] for _, _, k in gr_axisMesh])
-    zzzc = (zzzr + zzzl) / 2.0
+    if zfaces is not None:
+        zzzl = numpy.array([zfaces[0 + k * sizes['k']:0 + (k + 1) * sizes['k']] for _, _, k in gr_axisMesh])
+        zzzr = numpy.array([zfaces[1 + k * sizes['k']:1 + (k + 1) * sizes['k']] for _, _, k in gr_axisMesh])
+        zzzc = (zzzr + zzzl) / 2.0
+    else:
+        zzzl, zzzr, zzzc = None, None, None
 
     return (xxxl, xxxc, xxxr), (yyyl, yyyc, yyyr), (zzzl, zzzc, zzzr)
 
@@ -94,8 +97,9 @@ def write_coords(*, coordinates: Tuple['NDA', 'NDA', 'NDA'], path: str = '') -> 
     with h5py.File(filename, 'w') as h5file:
         
         # write data to file
-        for axis, coords in zip(('x', 'y', 'z'), coordinates): 
-            h5file.create_dataset(axis + 'Faces', data=coords)
+        for axis, coords in zip(('x', 'y', 'z'), coordinates):
+            if coords is not None:
+                h5file.create_dataset(axis + 'Faces', data=coords)
 
 def create_bounds(*, mins: Dict[str, float]={}, maxs: Dict[str, float]={}):
     def_mins = {key: 0.0 for key in ('i', 'j', 'k')}

@@ -18,8 +18,8 @@ from pyioflash.postprocess import elements
 from pyioflash.postprocess import analyses 
 
 # Used to create professional 2D plots
-from pyioflash.visual import _simple_plot2D 
-from pyioflash.visual import FigureOptions, PlotOptions, AnimationOptions
+#from pyioflash.visual import _simple_plot2D 
+#from pyioflash.visual import FigureOptions, PlotOptions, AnimationOptions
 
 # Used to generate and pre-process simulation data
 
